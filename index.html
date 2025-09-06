@@ -186,6 +186,24 @@
     // In-memory config (NU salva tokenul în repo!). Pentru producție recomand serverless (Netlify/Vercel).
     let githubConfig = { token: '', repo: '' };
 
+    // FUNCȚII PENTRU STOCARE PERSISTENTĂ
+function saveGithubConfigToStorage() {
+  localStorage.setItem('githubConfig', JSON.stringify(githubConfig));
+}
+
+function loadGithubConfigFromStorage() {
+  const saved = localStorage.getItem('githubConfig');
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      console.error('Eroare la parsarea configurării salvate:', e);
+      return { token: '', repo: '' };
+    }
+  }
+  return { token: '', repo: '' };
+}
+
     // In-memory cache
     let allWorkersData = {}; let saveTimeout = null;
 
@@ -469,19 +487,23 @@
     
     els.openGithubConfig.addEventListener('click', showGitHubModal);
     
-    els.saveGithubConfig.addEventListener('click', async ()=>{ 
-      githubConfig.token = els.githubToken.value.trim(); 
-      githubConfig.repo = els.githubRepo.value.trim(); 
-      if(!githubConfig.token||!githubConfig.repo){ 
-        showError('Te rog completează toate câmpurile!'); 
-        return; 
-      } 
-      const ok = await testGitHubConnection(); 
-      if(ok){ 
-        hideGitHubModal(); 
-        await load(); 
-      } 
-    });
+els.saveGithubConfig.addEventListener('click', async ()=>{ 
+  githubConfig.token = els.githubToken.value.trim(); 
+  githubConfig.repo = els.githubRepo.value.trim(); 
+  
+  if(!githubConfig.token||!githubConfig.repo){ 
+    showError('Te rog completează toate câmpurile!'); 
+    return; 
+  } 
+  
+  const ok = await testGitHubConnection(); 
+  if(ok){ 
+    // SALVARE PERSISTENTĂ a configurației
+    saveGithubConfigToStorage();
+    hideGitHubModal(); 
+    await load(); 
+  } 
+});
     
     els.testConnection.addEventListener('click', testGitHubConnection);
     els.githubModal.addEventListener('click', (e)=>{ 
@@ -520,13 +542,44 @@
       });
     })();
 
-    // Init
-    (async function init(){ 
-      els.year.textContent = new Date().getFullYear(); 
-      // Nu mai afișa automat modalul GitHub la încărcare
-      // showGitHubModal(); 
-      addRow(); // Adaugă un rând inițial
-    })();
+// Init - MODIFICAT pentru a încărca configurația salvată
+(async function init(){ 
+  els.year.textContent = new Date().getFullYear();
+  
+  // Încarcă configurația salvată din localStorage
+  githubConfig = loadGithubConfigFromStorage();
+  
+  // Dacă avem configurație salvată, verifică conexiunea
+  if (githubConfig.token && githubConfig.repo) {
+    updateStatus('saving', 'Verifică conexiunea...');
+    try {
+      const connected = await testGitHubConnection();
+      if (connected) {
+        await load();
+      }
+    } catch (error) {
+      updateStatus('error', 'Eroare conexiune');
+    }
+  } else {
+    updateStatus('offline', 'Configurează GitHub');
+  }
+  
+  addRow(); // Adaugă un rând inițial
+})();
+
+    // Buton pentru ștergere configurație
+document.getElementById('clearConfig').addEventListener('click', () => {
+  if (confirm('Sigur vrei să ștergi token-ul și configurația salvată?')) {
+    githubConfig = { token: '', repo: '' };
+    localStorage.removeItem('githubConfig');
+    els.githubToken.value = '';
+    els.githubRepo.value = '';
+    updateStatus('offline', 'Configurează GitHub');
+    alert('Configurația a fost ștearsă.');
+  }
+});
+
+// This should be the VERY LAST thing in your script
   </script>
 </body>
 </html>
