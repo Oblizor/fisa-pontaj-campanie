@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fișă de Pontaj – Cramă (GitHub Storage)</title>
+  <title>Fișă de Pontaj – Cramă</title>
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    body { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial; }
 
     /* Print-friendly A4 */
     @page { size: A4; margin: 14mm; }
@@ -18,24 +18,12 @@
       .shadow-md, .shadow { box-shadow: none !important; }
       .ring-1 { box-shadow: none !important; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      table { page-break-inside: auto; }
-      tr { page-break-inside: avoid; page-break-after: auto; }
       thead { display: table-header-group; }
       tfoot { display: table-footer-group; }
+      tr { page-break-inside: avoid; }
     }
 
-    /* Improve focus ring for accessibility */
-    .focusable:focus { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.6); border-radius: .5rem; }
-
-    .status-indicator { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; }
-    .status-saved   { background-color:#10b981; }
-    .status-saving  { background-color:#f59e0b; animation:pulse 2s infinite; }
-    .status-error   { background-color:#ef4444; }
-    .status-offline { background-color:#6b7280; }
-
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-
-    .github-setup { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .focusable:focus { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,.6); border-radius: .5rem; }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -43,52 +31,12 @@
 
   <header class="bg-white shadow-sm">
     <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-semibold">Fișă de Pontaj – Cramă</h1>
-        <div class="flex items-center mt-1">
-          <span id="statusIndicator" class="status-indicator status-offline"></span>
-          <span id="statusText" class="text-sm text-gray-500">Configurează GitHub</span>
-        </div>
-      </div>
-      <div class="text-sm text-gray-500">Versiunea 3.1</div>
+      <h1 class="text-xl sm:text-2xl font-semibold">Fișă de Pontaj – Cramă</h1>
+      <div class="text-sm text-gray-500">Versiunea 3.2</div>
     </div>
   </header>
 
-  <!-- GitHub Setup Modal -->
-  <div id="githubModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" style="display:none;">
-    <div class="bg-white rounded-lg max-w-md w-full p-6">
-      <h2 class="text-lg font-semibold mb-4">Configurare GitHub Storage</h2>
-      <div class="space-y-4">
-        <div>
-          <label for="githubToken" class="block text-sm font-medium text-gray-700">Token de acces GitHub</label>
-          <input id="githubToken" type="password" class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
-          <p class="mt-1 text-xs text-gray-500">Creează un Personal Access Token în GitHub → Settings → Developer settings. Permisiune: <strong>Contents: Read/Write</strong>.</p>
-        </div>
-        <div>
-          <label for="githubRepo" class="block text-sm font-medium text-gray-700">Repository (user/repo)</label>
-          <input id="githubRepo" type="text" class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="username/pontaj-data" />
-        </div>
-        <div class="flex gap-2">
-          <button id="saveGithubConfig" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Salvează</button>
-          <button id="testConnection" class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">Test conexiune</button>
-        </div>
-        <div id="githubError" class="mt-2 text-sm text-red-600 hidden"></div>
-      </div>
-    </div>
-  </div>
-
   <main id="content" class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
-    <!-- GitHub Status -->
-    <div id="githubStatus" class="mb-4 p-3 rounded-lg github-setup text-white">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="font-medium">GitHub Storage</h3>
-          <p class="text-sm opacity-90">Datele se sincronizează cu repository-ul GitHub configurat.</p>
-        </div>
-        <button id="openGithubConfig" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-sm">Configurează</button>
-      </div>
-    </div>
-
     <!-- Panou acțiuni -->
     <section class="no-print mb-4 grid grid-cols-2 sm:flex gap-2">
       <button id="addRow" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Adaugă rând</button>
@@ -96,7 +44,6 @@
       <button id="exportCSV" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Export CSV</button>
       <button id="printBtn" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-800">Printează</button>
       <button id="resetData" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600">Resetează date</button>
-      <button id="syncData" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700">Sincronizează</button>
     </section>
 
     <!-- Formular + tabel -->
@@ -111,8 +58,10 @@
             <option value="Prică Emilian">Prică Emilian</option>
             <option value="__custom">Alt nume…</option>
           </select>
-          <input id="workerName" name="workerName" type="text" class="mt-2 hidden w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="Introdu numele" />
-          <p class="mt-1 text-xs text-gray-500">Pontajul se salvează separat pentru fiecare angajat în GitHub.</p>
+          <input id="workerName" name="workerName" type="text"
+                 class="mt-2 hidden w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border"
+                 placeholder="Introdu numele" />
+          <p class="mt-1 text-xs text-gray-500">Pontajul se salvează automat în acest browser, separat pentru fiecare angajat.</p>
         </div>
       </div>
 
@@ -149,437 +98,269 @@
           <div class="h-16 border-b"></div>
         </div>
       </div>
-
-      <div aria-live="polite" id="errorArea" class="sr-only"></div>
     </form>
+
+    <p class="mt-3 text-xs text-gray-500">Hint: Dacă o tură trece de miezul nopții, bifează „Zi următoare” pe rândul respectiv.</p>
   </main>
 
   <footer class="no-print border-t bg-white">
-    <div class="max-w-5xl mx-auto px-4 py-3 text-xs text-gray-500">© <span id="year"></span> – Fișă de Pontaj Cramă cu GitHub Storage. Pământul ne inspiră, pasiunea ne unește.</div>
+    <div class="max-w-5xl mx-auto px-4 py-3 text-xs text-gray-500">© <span id="year"></span> – Fișă de Pontaj Cramă</div>
   </footer>
 
+  <!-- Row template -->
   <template id="rowTemplate">
     <tr>
-      <td class="px-3 py-2 align-top"><input type="checkbox" aria-label="Selectează rând" class="focusable w-4 h-4" /></td>
-      <td class="px-3 py-2 align-top"><label class="sr-only">Data</label><input type="date" class="focusable mt-1 block w-40 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" /></td>
-      <td class="px-3 py-2 align-top"><label class="sr-only">Început</label><input type="time" step="60" class="focusable mt-1 block w-28 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" /></td>
-      <td class="px-3 py-2 align-top"><label class="sr-only">Sfârșit</label><input type="time" step="60" class="focusable mt-1 block w-28 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" /></td>
-      <td class="px-3 py-2 align-top"><label class="sr-only">Pauză (minute)</label><input type="number" min="0" step="5" value="0" class="focusable mt-1 block w-28 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" /></td>
-      <td class="px-3 py-2 align-top"><label class="sr-only">Activitate</label><textarea rows="1" class="focusable mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" placeholder="ex: cules, sortare, transport…"></textarea></td>
-      <td class="px-3 py-2 align-top text-right"><output class="rowTotal font-medium">0.00</output></td>
+      <td class="px-3 py-2 align-top">
+        <input type="checkbox" aria-label="Selectează rând" class="focusable w-4 h-4" />
+      </td>
+
+      <td class="px-3 py-2 align-top">
+        <label class="sr-only">Data</label>
+        <input type="date" class="focusable mt-1 block w-40 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" />
+      </td>
+
+      <td class="px-3 py-2 align-top">
+        <label class="sr-only">Început</label>
+        <input type="time" step="60" class="focusable mt-1 block w-28 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" />
+      </td>
+
+      <td class="px-3 py-2 align-top">
+        <label class="sr-only">Sfârșit</label>
+        <div class="flex items-center gap-2">
+          <input type="time" step="60" class="focusable mt-1 block w-28 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" />
+          <label class="inline-flex items-center gap-1 text-xs text-gray-600 select-none">
+            <input type="checkbox" class="next-day-toggle">
+            <span>Zi următoare</span>
+          </label>
+        </div>
+      </td>
+
+      <td class="px-3 py-2 align-top">
+        <label class="sr-only">Pauză (minute)</label>
+        <input type="number" min="0" step="5" value="0" class="focusable mt-1 block w-28 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" />
+      </td>
+
+      <td class="px-3 py-2 align-top">
+        <label class="sr-only">Activitate</label>
+        <textarea rows="1" class="focusable mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2 py-1 border" placeholder="ex: cules, sortare, transport…"></textarea>
+      </td>
+
+      <td class="px-3 py-2 align-top text-right">
+        <output class="rowTotal font-medium">0.00</output>
+      </td>
     </tr>
   </template>
 
   <script>
-    const WORKERS = ["Prică Jenița","Neagu Marian","Banu Mitică","Prică Emilian"]; // preset
-
+    // ---------- Helpers & state ----------
+    const WORKERS = ["Prică Jenița","Neagu Marian","Banu Mitică","Prică Emilian"];
     const els = {
-      tableBody: document.getElementById("tableBody"), rowTmpl: document.getElementById("rowTemplate"), grandTotal: document.getElementById("grandTotal"), errorArea: document.getElementById("errorArea"),
-      form: document.getElementById("timesheetForm"), addRow: document.getElementById("addRow"), deleteSelected: document.getElementById("deleteSelected"), exportCSV: document.getElementById("exportCSV"),
-      printBtn: document.getElementById("printBtn"), resetData: document.getElementById("resetData"), syncData: document.getElementById("syncData"), year: document.getElementById("year"),
-      workerSelect: document.getElementById("workerSelect"), workerName: document.getElementById("workerName"), githubModal: document.getElementById("githubModal"),
-      githubToken: document.getElementById("githubToken"), githubRepo: document.getElementById("githubRepo"), saveGithubConfig: document.getElementById("saveGithubConfig"),
-      testConnection: document.getElementById("testConnection"), openGithubConfig: document.getElementById("openGithubConfig"), statusIndicator: document.getElementById("statusIndicator"),
-      statusText: document.getElementById("statusText"), githubError: document.getElementById("githubError"),
+      tableBody: document.getElementById("tableBody"),
+      rowTmpl: document.getElementById("rowTemplate"),
+      grandTotal: document.getElementById("grandTotal"),
+      addRow: document.getElementById("addRow"),
+      deleteSelected: document.getElementById("deleteSelected"),
+      exportCSV: document.getElementById("exportCSV"),
+      printBtn: document.getElementById("printBtn"),
+      resetData: document.getElementById("resetData"),
+      workerSelect: document.getElementById("workerSelect"),
+      workerName: document.getElementById("workerName"),
+      year: document.getElementById("year"),
     };
+    els.year.textContent = new Date().getFullYear();
 
-    // In-memory config (NU salva tokenul în repo!). Pentru producție recomand serverless (Netlify/Vercel).
-    let githubConfig = { token: '', repo: '' };
+    const slug = s => (s||"")
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
 
-    // FUNCȚII PENTRU STOCARE PERSISTENTĂ
-function saveGithubConfigToStorage() {
-  localStorage.setItem('githubConfig', JSON.stringify(githubConfig));
-}
+    const currentWorker = () =>
+      els.workerSelect.value === "__custom"
+        ? (els.workerName.value.trim() || "custom")
+        : els.workerSelect.value;
 
-function loadGithubConfigFromStorage() {
-  const saved = localStorage.getItem('githubConfig');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      console.error('Eroare la parsarea configurării salvate:', e);
-      return { token: '', repo: '' };
+    const storageKey = () => `pontaj-v3-${slug(currentWorker())}`;
+    let saveTimeout = null;
+
+    // ---------- Core ----------
+    function computeDuration(start, end, breakMin, isNextDay=false) {
+      if (!start || !end) return 0;
+      const [sh, sm] = start.split(":").map(Number);
+      const [eh, em] = end.split(":").map(Number);
+      let startM = sh*60 + sm;
+      let endM   = eh*60 + em;
+      if (isNextDay || endM < startM) endM += 24*60;  // handle crossing midnight
+      const diff = Math.max(0, endM - startM - (parseInt(breakMin||0,10)));
+      return diff/60;
     }
-  }
-  return { token: '', repo: '' };
-}
 
-    // In-memory cache
-    let allWorkersData = {}; let saveTimeout = null;
-
-    function updateStatus(status, message){ els.statusIndicator.className = `status-indicator status-${status}`; els.statusText.textContent = message; }
-    function showError(msg){ els.githubError.textContent = msg; els.githubError.classList.remove('hidden'); setTimeout(()=>els.githubError.classList.add('hidden'), 5000); }
-
-    // Funcție îmbunătățită pentru a gestiona corect diacriticele în română
-    const slug = (s) => {
-      if (!s) return '';
-      return s.toString()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\-]+/g, '')
-        .replace(/\-\-+/g, '-')
-        .replace(/^-+/, '')
-        .replace(/-+$/, '');
-    };
-
-    const currentWorker = () => {
-      if (els.workerSelect.value === '__custom') {
-        const customName = els.workerName.value.trim();
-        return customName || 'Angajat-nedefinit';
-      }
-      return els.workerSelect.value;
-    };
-
-    const getFileName = () => `data/pontaj_${slug(currentWorker())}.json`;
-
-    async function githubRequest(endpoint, options={}){
-      if(!githubConfig.token || !githubConfig.repo) throw new Error('GitHub nu este configurat');
-      const [owner, repo] = githubConfig.repo.split('/'); 
-      if(!owner||!repo) throw new Error('Repository invalid (user/repo)');
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${endpoint}`;
-      const resp = await fetch(url, { 
-        ...options, 
-        headers: { 
-          'Authorization': `Bearer ${githubConfig.token}`, 
-          'Accept': 'application/vnd.github.v3+json', 
-          'Content-Type': 'application/json', 
-          ...(options.headers||{}) 
-        } 
+    function computeGrand() {
+      let total = 0;
+      els.tableBody.querySelectorAll("tr").forEach(tr => {
+        total += parseFloat(tr.querySelector("output.rowTotal").textContent || "0");
       });
-      if(!resp.ok){ 
-        let msg = `HTTP ${resp.status}`; 
-        try{ 
-          const j = await resp.json(); 
-          msg = j.message || msg; 
-        }catch{} 
-        throw new Error(msg); 
-      }
-      return resp.json();
+      els.grandTotal.textContent = total.toFixed(2);
     }
 
-    async function saveToGitHub(data){
-      if(!githubConfig.token || !githubConfig.repo){ 
-        updateStatus('offline','GitHub nu este configurat'); 
-        return; 
-      }
-      updateStatus('saving','Salvează în GitHub…');
-      try{
-        const path = getFileName(); 
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
-        let sha; 
-        try{ 
-          const existing = await githubRequest(path); 
-          sha = existing.sha; 
-        }catch{}
-        const payload = { 
-          message: `Actualizare pontaj: ${currentWorker()} – ${new Date().toLocaleString('ro-RO')}`, 
-          content, 
-          ...(sha?{sha}:{}) 
-        };
-        await githubRequest(path,{ method:'PUT', body: JSON.stringify(payload) });
-        updateStatus('saved','Sincronizat');
-      }catch(e){ 
-        console.error('Eroare salvare GitHub:',e); 
-        updateStatus('error',`Eroare: ${e.message}`); 
-        allWorkersData[currentWorker()] = data; 
-      }
+    function debouncedSave() {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(save, 700);
     }
 
-    async function loadFromGitHub(){
-      if(!githubConfig.token || !githubConfig.repo) return allWorkersData[currentWorker()]||null;
-      updateStatus('saving','Încarcă din GitHub…');
-      try{
-        const r = await githubRequest(getFileName());
-        const content = JSON.parse(decodeURIComponent(escape(atob(r.content))));
-        updateStatus('saved','Încărcat din GitHub'); 
-        allWorkersData[currentWorker()] = content; 
-        return content;
-      }catch(e){ 
-        console.warn('Load GitHub:',e); 
-        updateStatus('offline','Date locale'); 
-        return allWorkersData[currentWorker()]||null; 
-      }
-    }
-
-    async function testGitHubConnection(){
-      if(!githubConfig.token || !githubConfig.repo){ 
-        showError('Completează token și repository'); 
-        return false; 
-      }
-      updateStatus('saving','Testează conexiunea…');
-      try{
-        const [owner, repo] = githubConfig.repo.split('/');
-        const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { 
-          headers:{ 
-            'Authorization':`Bearer ${githubConfig.token}`, 
-            'Accept':'application/vnd.github.v3+json' 
-          } 
+    function save() {
+      const rows = [];
+      els.tableBody.querySelectorAll("tr").forEach(tr => {
+        const [chk, date, start, end, breakMin, notes, out] = tr.querySelectorAll("input, textarea, output");
+        const nextDay = tr.querySelector('input.next-day-toggle');
+        rows.push({
+          date: date.value || "",
+          start: start.value || "",
+          end: end.value || "",
+          nextDay: !!(nextDay && nextDay.checked),
+          breakMin: parseInt(breakMin.value || 0, 10),
+          notes: notes.value || "",
+          hours: parseFloat(out.textContent || "0"),
         });
-        if(!resp.ok){ 
-          const j = await resp.json().catch(()=>({message:'Eroare'})); 
-          throw new Error(j.message||`HTTP ${resp.status}`); 
-        }
-        const repoData = await resp.json(); 
-        updateStatus('saved',`Conectat la ${repoData.full_name}`); 
-        els.githubError.classList.add('hidden'); 
-        return true;
-      }catch(e){ 
-        updateStatus('error',`Eroare: ${e.message}`); 
-        showError(`Eroare conexiune: ${e.message}`); 
-        return false; 
-      }
+      });
+      const payload = { meta: { worker: currentWorker(), lastUpdated: new Date().toISOString(), version: "3.2" }, rows };
+      localStorage.setItem(storageKey(), JSON.stringify(payload));
     }
 
-    function addRow(data){
-      const node = els.rowTmpl.content.cloneNode(true); 
-      const [chk,date,start,end,breakMin,notes,out] = node.querySelectorAll('input, textarea, output');
-      if(data){ 
-        date.value=data.date||''; 
-        start.value=data.start||''; 
-        end.value=data.end||''; 
-        breakMin.value = data.breakMin??0; 
-        notes.value=data.notes||''; 
+    function load() {
+      els.tableBody.innerHTML = "";
+      const raw = localStorage.getItem(storageKey());
+      let data = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch {}
+      const list = (data && data.rows && data.rows.length) ? data.rows : [{}];
+      list.forEach(r => addRow(r));
+      computeGrand();
+    }
+
+    // ---------- UI ----------
+    function addRow(data) {
+      const node = els.rowTmpl.content.cloneNode(true);
+      const [chk, date, start, end, breakMin, notes, out] = node.querySelectorAll("input, textarea, output");
+      const nextDay = node.querySelector("input.next-day-toggle");
+
+      if (data) {
+        date.value = data.date || "";
+        start.value = data.start || "";
+        end.value = data.end || "";
+        breakMin.value = data.breakMin ?? 0;
+        notes.value = data.notes || "";
+        if (nextDay && typeof data.nextDay === "boolean") nextDay.checked = data.nextDay;
       }
-      const recalc = () => { 
-        const dur = computeDuration(start.value,end.value,parseInt(breakMin.value||0,10)); 
-        out.textContent = dur.toFixed(2); 
-        computeGrand(); 
-        debouncedSave(); 
+
+      const recalc = () => {
+        const dur = computeDuration(start.value, end.value, breakMin.value, nextDay && nextDay.checked);
+        out.textContent = dur.toFixed(2);
+        computeGrand();
+        debouncedSave();
       };
-      [date,start,end,breakMin,notes].forEach(el => { 
-        el.addEventListener('input',recalc); 
-        el.addEventListener('change',recalc); 
+
+      [date, start, end, breakMin, notes].forEach(el => {
+        el.addEventListener("input", recalc);
+        el.addEventListener("change", recalc);
       });
-      recalc(); 
+      if (nextDay) {
+        nextDay.addEventListener("change", recalc);
+      }
+
+      // init values
+      recalc();
       els.tableBody.appendChild(node);
     }
 
-    function computeDuration(start,end,breakMin){ 
-      if(!start||!end) return 0; 
-      const [sh,sm]=start.split(':').map(Number); 
-      const [eh,em]=end.split(':').map(Number); 
-      let s=sh*60+sm, e=eh*60+em; 
-      if(e<s) e+=1440; 
-      const diff=Math.max(0,e-s-(breakMin||0)); 
-      return diff/60; 
+    function deleteSelectedRows() {
+      const rows = Array.from(els.tableBody.querySelectorAll("tr"));
+      const toDelete = rows.filter(tr => tr.querySelector('input[type="checkbox"]').checked);
+      if (!toDelete.length) return;
+      if (!confirm(`Ștergi ${toDelete.length} rând(uri)?`)) return;
+      toDelete.forEach(tr => tr.remove());
+      if (!els.tableBody.querySelector("tr")) addRow({});
+      computeGrand();
+      save();
     }
 
-    function computeGrand(){ 
-      let t=0; 
-      els.tableBody.querySelectorAll('tr').forEach(tr=>{ 
-        const out = tr.querySelector('output.rowTotal'); 
-        t += parseFloat(out.textContent||'0'); 
-      }); 
-      els.grandTotal.textContent = t.toFixed(2); 
-    }
-
-    function save(){
-      const rows=[]; 
-      els.tableBody.querySelectorAll('tr').forEach(tr=>{ 
-        const [chk,date,start,end,breakMin,notes,out]=tr.querySelectorAll('input, textarea, output'); 
-        rows.push({ 
-          date:date.value||'', 
-          start:start.value||'', 
-          end:end.value||'', 
-          breakMin:parseInt(breakMin.value||0,10), 
-          notes:notes.value||'', 
-          hours:parseFloat(out.textContent||'0') 
-        }); 
-      });
-      const payload = { 
-        meta:{ 
-          worker: currentWorker(), 
-          lastUpdated:new Date().toISOString(), 
-          version:'3.1' 
-        }, 
-        rows 
-      };
-      allWorkersData[currentWorker()] = payload; // cache local
-      saveToGitHub(payload);
-    }
-
-    function debouncedSave(){ 
-      clearTimeout(saveTimeout); 
-      saveTimeout = setTimeout(save, 800); 
-    }
-
-    async function load(){ 
-      els.tableBody.innerHTML=''; 
-      const data = await loadFromGitHub(); 
-      const list = (data&&data.rows&&data.rows.length)?data.rows:[{}]; 
-      list.forEach(r=>addRow(r)); 
-      computeGrand(); 
-    }
-
-    function exportCSV(){ 
-      const sep=","; 
-      const header=['Angajat','Data','Început','Sfârșit','Pauză (min)','Activitate','Ore']; 
-      const lines=[header.join(sep)]; 
-      els.tableBody.querySelectorAll('tr').forEach(tr=>{ 
-        const [c,date,start,end,breakMin,notes,out]=tr.querySelectorAll('input, textarea, output'); 
-        const row=[
+    function exportCSV() {
+      const sep = ","; // pentru Excel RO poți schimba în ";"
+      const header = ["Angajat","Data","Început","Sfârșit","Zi următoare","Pauză (min)","Activitate","Ore"];
+      const lines = [header.join(sep)];
+      els.tableBody.querySelectorAll("tr").forEach(tr => {
+        const [chk, date, start, end, breakMin, notes, out] = tr.querySelectorAll("input, textarea, output");
+        const nextDay = tr.querySelector('input.next-day-toggle');
+        const row = [
           escapeCSV(currentWorker()),
           date.value,
           start.value,
           end.value,
-          breakMin.value||0,
+          (nextDay && nextDay.checked) ? "da" : "nu",
+          breakMin.value || 0,
           escapeCSV(notes.value),
-          (out.textContent||'0')
-        ]; 
-        lines.push(row.join(sep)); 
-      }); 
-      
-      const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {type: 'text/csv;charset=utf-8;'});
+          out.textContent || "0"
+        ];
+        lines.push(row.join(sep));
+      });
+      const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `pontaj_${slug(currentWorker())}_${new Date().toISOString().slice(0,10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    function escapeCSV(s){ 
-      if(s==null) return ''; 
-      const str=String(s); 
-      return (/[",\r\n]/.test(str)) ? '"' + str.replace(/"/g, '""') + '"' : str; 
+    function escapeCSV(s) {
+      if (s == null) return "";
+      const str = String(s);
+      return (/[",\r\n]/.test(str)) ? '"' + str.replace(/"/g, '""') + '"' : str;
     }
 
-    function printSheet(){ window.print(); }
-
-    function deleteSelectedRows(){ 
-      const rows=[...els.tableBody.querySelectorAll('tr')]; 
-      const del=rows.filter(tr=>tr.querySelector('input[type="checkbox"]').checked); 
-      if(!del.length) return; 
-      if(!confirm(`Ștergi ${del.length} rând(uri)?`)) return; 
-      del.forEach(tr=>tr.remove()); 
-      if(!els.tableBody.querySelector('tr')) addRow(); 
-      computeGrand(); 
-      save(); 
-    }
-
-    // Events
-    els.addRow.addEventListener('click', ()=>{ addRow(); save(); });
-    els.deleteSelected.addEventListener('click', deleteSelectedRows);
-    els.exportCSV.addEventListener('click', exportCSV);
-    els.printBtn.addEventListener('click', printSheet);
-    els.syncData.addEventListener('click', load);
-    els.resetData.addEventListener('click', ()=>{ 
-      if(confirm('Sigur ștergi toate datele angajatului curent?')){ 
-        els.tableBody.innerHTML=''; 
-        addRow(); 
-        computeGrand(); 
-        save(); 
-      } 
+    // ---------- Events ----------
+    els.addRow.addEventListener("click", () => { addRow({}); save(); });
+    els.deleteSelected.addEventListener("click", deleteSelectedRows);
+    els.exportCSV.addEventListener("click", exportCSV);
+    els.printBtn.addEventListener("click", () => window.print());
+    els.resetData.addEventListener("click", () => {
+      if (!confirm("Sigur ștergi toate datele angajatului curent?")) return;
+      localStorage.removeItem(storageKey());
+      els.tableBody.innerHTML = "";
+      addRow({});
+      computeGrand();
+      save();
     });
 
-    // Modal events
-    function showGitHubModal(){ 
-      els.githubToken.value = githubConfig.token; 
-      els.githubRepo.value = githubConfig.repo; 
-      els.githubModal.style.display='flex'; 
-    }
-    
-    function hideGitHubModal(){ 
-      els.githubModal.style.display='none'; 
-    }
-    
-    els.openGithubConfig.addEventListener('click', showGitHubModal);
-    
-els.saveGithubConfig.addEventListener('click', async ()=>{ 
-  githubConfig.token = els.githubToken.value.trim(); 
-  githubConfig.repo = els.githubRepo.value.trim(); 
-  
-  if(!githubConfig.token||!githubConfig.repo){ 
-    showError('Te rog completează toate câmpurile!'); 
-    return; 
-  } 
-  
-  const ok = await testGitHubConnection(); 
-  if(ok){ 
-    // SALVARE PERSISTENTĂ a configurației
-    saveGithubConfigToStorage();
-    hideGitHubModal(); 
-    await load(); 
-  } 
-});
-    
-    els.testConnection.addEventListener('click', testGitHubConnection);
-    els.githubModal.addEventListener('click', (e)=>{ 
-      if(e.target===els.githubModal) hideGitHubModal(); 
-    });
-    
-    document.addEventListener('keydown', (e)=>{ 
-      if(e.key==='Escape' && els.githubModal.style.display==='flex') hideGitHubModal(); 
-    });
-
-    // Worker select
+    // Worker handling
     (function initWorkers(){
-      els.workerSelect.value = WORKERS[0]; 
-      els.workerName.classList.add('hidden');
-      
-      els.workerSelect.addEventListener('change', ()=>{
-        if(els.workerSelect.value==='__custom'){ 
-          els.workerName.classList.remove('hidden'); 
-          els.workerName.focus(); 
-        } else { 
-          els.workerName.classList.add('hidden'); 
-          els.workerName.value=''; 
+      els.workerSelect.value = WORKERS[0];
+      els.workerName.classList.add("hidden");
+
+      els.workerSelect.addEventListener("change", () => {
+        if (els.workerSelect.value === "__custom") {
+          els.workerName.classList.remove("hidden");
+          els.workerName.focus();
+        } else {
+          els.workerName.classList.add("hidden");
+          els.workerName.value = "";
         }
         load();
       });
-      
-      els.workerName.addEventListener('input', ()=>{ 
-        // Validare nume personalizat
-        const name = els.workerName.value.trim();
-        if (name.length < 2) {
-          els.workerName.setCustomValidity('Numele trebuie să aibă cel puțin 2 caractere');
+
+      els.workerName.addEventListener("input", () => {
+        // tiny validation
+        if (els.workerName.value.trim().length < 2) {
+          els.workerName.setCustomValidity("Numele trebuie să aibă cel puțin 2 caractere");
         } else {
-          els.workerName.setCustomValidity('');
+          els.workerName.setCustomValidity("");
         }
-        load(); 
+        load();
       });
     })();
 
-// Init - MODIFICAT pentru a încărca configurația salvată
-(async function init(){ 
-  els.year.textContent = new Date().getFullYear();
-  
-  // Încarcă configurația salvată din localStorage
-  githubConfig = loadGithubConfigFromStorage();
-  
-  // Dacă avem configurație salvată, verifică conexiunea
-  if (githubConfig.token && githubConfig.repo) {
-    updateStatus('saving', 'Verifică conexiunea...');
-    try {
-      const connected = await testGitHubConnection();
-      if (connected) {
-        await load();
-      }
-    } catch (error) {
-      updateStatus('error', 'Eroare conexiune');
-    }
-  } else {
-    updateStatus('offline', 'Configurează GitHub');
-  }
-  
-  addRow(); // Adaugă un rând inițial
-})();
-
-    // Buton pentru ștergere configurație
-document.getElementById('clearConfig').addEventListener('click', () => {
-  if (confirm('Sigur vrei să ștergi token-ul și configurația salvată?')) {
-    githubConfig = { token: '', repo: '' };
-    localStorage.removeItem('githubConfig');
-    els.githubToken.value = '';
-    els.githubRepo.value = '';
-    updateStatus('offline', 'Configurează GitHub');
-    alert('Configurația a fost ștearsă.');
-  }
-});
-
-// This should be the VERY LAST thing in your script
+    // Init
+    (function init(){
+      load();                       // încarcă din localStorage pentru primul angajat
+      if (!els.tableBody.querySelector("tr")) addRow({}); // asigură un rând
+    })();
   </script>
 </body>
 </html>
