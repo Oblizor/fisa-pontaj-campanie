@@ -234,8 +234,8 @@
 
     // GitHub Configuration
     let githubConfig = {
-      token: localStorage.getItem('github_token') || '',
-      repo: localStorage.getItem('github_repo') || '',
+      token: localStorage.getItem('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') || '',
+      repo: localStorage.getItem('Oblizor/fisa-pontaj-campanie') || '',
     };
 
     // Status Management
@@ -589,7 +589,13 @@
 
     // Initialize
     (async function init() {
-      if (!githubConfig.token || !githubConfig.repo) {
+      // Verifică dacă sunt valorile default (placeholder) sau sunt configurate
+      const hasValidConfig = githubConfig.token && 
+                            githubConfig.repo && 
+                            !githubConfig.token.includes('XXXX') &&
+                            !githubConfig.repo.includes('username');
+      
+      if (!hasValidConfig) {
         showGitHubModal();
       } else {
         await testGitHubConnection();
