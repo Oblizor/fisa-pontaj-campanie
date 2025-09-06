@@ -231,13 +231,11 @@
       statusIndicator: document.getElementById("statusIndicator"),
       statusText: document.getElementById("statusText"),
     };
-
-    // GitHub Configuration
-    let githubConfig = {
-      token: localStorage.getItem('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') || '',
-      repo: localStorage.getItem('Oblizor/fisa-pontaj-campanie') || '',
-    };
-
+// Correctly uses the generic keys to retrieve the saved values.
+let githubConfig = {
+  token: localStorage.getItem('github_token') || '',
+  repo: localStorage.getItem('github_repo') || '',
+};
     // Status Management
     function updateStatus(status, message) {
       els.statusIndicator.className = `status-indicator status-${status}`;
