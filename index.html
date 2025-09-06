@@ -192,29 +192,81 @@
     function updateStatus(status, message){ els.statusIndicator.className = `status-indicator status-${status}`; els.statusText.textContent = message; }
     function showError(msg){ els.githubError.textContent = msg; els.githubError.classList.remove('hidden'); setTimeout(()=>els.githubError.classList.add('hidden'), 5000); }
 
-    const slug = (s)=> (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-    const currentWorker = ()=> els.workerSelect.value === '__custom' ? (els.workerName.value.trim()||'custom') : els.workerSelect.value;
-    const getFileName = ()=> `data/pontaj_${slug(currentWorker())}.json`;
+    // Funcție îmbunătățită pentru a gestiona corect diacriticele în română
+    const slug = (s) => {
+      if (!s) return '';
+      return s.toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+    };
+
+    const currentWorker = () => {
+      if (els.workerSelect.value === '__custom') {
+        const customName = els.workerName.value.trim();
+        return customName || 'Angajat-nedefinit';
+      }
+      return els.workerSelect.value;
+    };
+
+    const getFileName = () => `data/pontaj_${slug(currentWorker())}.json`;
 
     async function githubRequest(endpoint, options={}){
       if(!githubConfig.token || !githubConfig.repo) throw new Error('GitHub nu este configurat');
-      const [owner, repo] = githubConfig.repo.split('/'); if(!owner||!repo) throw new Error('Repository invalid (user/repo)');
+      const [owner, repo] = githubConfig.repo.split('/'); 
+      if(!owner||!repo) throw new Error('Repository invalid (user/repo)');
       const url = `https://api.github.com/repos/${owner}/${repo}/contents/${endpoint}`;
-      const resp = await fetch(url, { ...options, headers: { 'Authorization': `Bearer ${githubConfig.token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json', ...(options.headers||{}) } });
-      if(!resp.ok){ let msg = `HTTP ${resp.status}`; try{ const j = await resp.json(); msg = j.message || msg; }catch{} throw new Error(msg); }
+      const resp = await fetch(url, { 
+        ...options, 
+        headers: { 
+          'Authorization': `Bearer ${githubConfig.token}`, 
+          'Accept': 'application/vnd.github.v3+json', 
+          'Content-Type': 'application/json', 
+          ...(options.headers||{}) 
+        } 
+      });
+      if(!resp.ok){ 
+        let msg = `HTTP ${resp.status}`; 
+        try{ 
+          const j = await resp.json(); 
+          msg = j.message || msg; 
+        }catch{} 
+        throw new Error(msg); 
+      }
       return resp.json();
     }
 
     async function saveToGitHub(data){
-      if(!githubConfig.token || !githubConfig.repo){ updateStatus('offline','GitHub nu este configurat'); return; }
+      if(!githubConfig.token || !githubConfig.repo){ 
+        updateStatus('offline','GitHub nu este configurat'); 
+        return; 
+      }
       updateStatus('saving','Salvează în GitHub…');
       try{
-        const path = getFileName(); const content = btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
-        let sha; try{ const existing = await githubRequest(path); sha = existing.sha; }catch{}
-        const payload = { message: `Actualizare pontaj: ${currentWorker()} – ${new Date().toLocaleString('ro-RO')}`, content, ...(sha?{sha}:{}) };
+        const path = getFileName(); 
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+        let sha; 
+        try{ 
+          const existing = await githubRequest(path); 
+          sha = existing.sha; 
+        }catch{}
+        const payload = { 
+          message: `Actualizare pontaj: ${currentWorker()} – ${new Date().toLocaleString('ro-RO')}`, 
+          content, 
+          ...(sha?{sha}:{}) 
+        };
         await githubRequest(path,{ method:'PUT', body: JSON.stringify(payload) });
         updateStatus('saved','Sincronizat');
-      }catch(e){ console.error('Eroare salvare GitHub:',e); updateStatus('error',`Eroare: ${e.message}`); allWorkersData[currentWorker()] = data; }
+      }catch(e){ 
+        console.error('Eroare salvare GitHub:',e); 
+        updateStatus('error',`Eroare: ${e.message}`); 
+        allWorkersData[currentWorker()] = data; 
+      }
     }
 
     async function loadFromGitHub(){
@@ -223,49 +275,171 @@
       try{
         const r = await githubRequest(getFileName());
         const content = JSON.parse(decodeURIComponent(escape(atob(r.content))));
-        updateStatus('saved','Încărcat din GitHub'); allWorkersData[currentWorker()] = content; return content;
-      }catch(e){ console.warn('Load GitHub:',e); updateStatus('offline','Date locale'); return allWorkersData[currentWorker()]||null; }
+        updateStatus('saved','Încărcat din GitHub'); 
+        allWorkersData[currentWorker()] = content; 
+        return content;
+      }catch(e){ 
+        console.warn('Load GitHub:',e); 
+        updateStatus('offline','Date locale'); 
+        return allWorkersData[currentWorker()]||null; 
+      }
     }
 
     async function testGitHubConnection(){
-      if(!githubConfig.token || !githubConfig.repo){ showError('Completează token și repository'); return false; }
+      if(!githubConfig.token || !githubConfig.repo){ 
+        showError('Completează token și repository'); 
+        return false; 
+      }
       updateStatus('saving','Testează conexiunea…');
       try{
         const [owner, repo] = githubConfig.repo.split('/');
-        const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers:{ 'Authorization':`Bearer ${githubConfig.token}`, 'Accept':'application/vnd.github.v3+json' } });
-        if(!resp.ok){ const j = await resp.json().catch(()=>({message:'Eroare'})); throw new Error(j.message||`HTTP ${resp.status}`); }
-        const repoData = await resp.json(); updateStatus('saved',`Conectat la ${repoData.full_name}`); els.githubError.classList.add('hidden'); return true;
-      }catch(e){ updateStatus('error',`Eroare: ${e.message}`); showError(`Eroare conexiune: ${e.message}`); return false; }
+        const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { 
+          headers:{ 
+            'Authorization':`Bearer ${githubConfig.token}`, 
+            'Accept':'application/vnd.github.v3+json' 
+          } 
+        });
+        if(!resp.ok){ 
+          const j = await resp.json().catch(()=>({message:'Eroare'})); 
+          throw new Error(j.message||`HTTP ${resp.status}`); 
+        }
+        const repoData = await resp.json(); 
+        updateStatus('saved',`Conectat la ${repoData.full_name}`); 
+        els.githubError.classList.add('hidden'); 
+        return true;
+      }catch(e){ 
+        updateStatus('error',`Eroare: ${e.message}`); 
+        showError(`Eroare conexiune: ${e.message}`); 
+        return false; 
+      }
     }
 
     function addRow(data){
-      const node = els.rowTmpl.content.cloneNode(true); const [chk,date,start,end,breakMin,notes,out] = node.querySelectorAll('input, textarea, output');
-      if(data){ date.value=data.date||''; start.value=data.start||''; end.value=data.end||''; breakMin.value = data.breakMin??0; notes.value=data.notes||''; }
-      const recalc = ()=>{ const dur = computeDuration(start.value,end.value,parseInt(breakMin.value||0,10)); out.textContent = dur.toFixed(2); computeGrand(); debouncedSave(); };
-      [date,start,end,breakMin,notes].forEach(el=>{ el.addEventListener('input',recalc); el.addEventListener('change',recalc); });
-      recalc(); els.tableBody.appendChild(node);
+      const node = els.rowTmpl.content.cloneNode(true); 
+      const [chk,date,start,end,breakMin,notes,out] = node.querySelectorAll('input, textarea, output');
+      if(data){ 
+        date.value=data.date||''; 
+        start.value=data.start||''; 
+        end.value=data.end||''; 
+        breakMin.value = data.breakMin??0; 
+        notes.value=data.notes||''; 
+      }
+      const recalc = () => { 
+        const dur = computeDuration(start.value,end.value,parseInt(breakMin.value||0,10)); 
+        out.textContent = dur.toFixed(2); 
+        computeGrand(); 
+        debouncedSave(); 
+      };
+      [date,start,end,breakMin,notes].forEach(el => { 
+        el.addEventListener('input',recalc); 
+        el.addEventListener('change',recalc); 
+      });
+      recalc(); 
+      els.tableBody.appendChild(node);
     }
 
-    function computeDuration(start,end,breakMin){ if(!start||!end) return 0; const [sh,sm]=start.split(':').map(Number); const [eh,em]=end.split(':').map(Number); let s=sh*60+sm, e=eh*60+em; if(e<s) e+=1440; const diff=Math.max(0,e-s-(breakMin||0)); return diff/60; }
-    function computeGrand(){ let t=0; els.tableBody.querySelectorAll('tr').forEach(tr=>{ const out = tr.querySelector('output.rowTotal'); t += parseFloat(out.textContent||'0'); }); els.grandTotal.textContent = t.toFixed(2); }
+    function computeDuration(start,end,breakMin){ 
+      if(!start||!end) return 0; 
+      const [sh,sm]=start.split(':').map(Number); 
+      const [eh,em]=end.split(':').map(Number); 
+      let s=sh*60+sm, e=eh*60+em; 
+      if(e<s) e+=1440; 
+      const diff=Math.max(0,e-s-(breakMin||0)); 
+      return diff/60; 
+    }
+
+    function computeGrand(){ 
+      let t=0; 
+      els.tableBody.querySelectorAll('tr').forEach(tr=>{ 
+        const out = tr.querySelector('output.rowTotal'); 
+        t += parseFloat(out.textContent||'0'); 
+      }); 
+      els.grandTotal.textContent = t.toFixed(2); 
+    }
 
     function save(){
-      const rows=[]; els.tableBody.querySelectorAll('tr').forEach(tr=>{ const [chk,date,start,end,breakMin,notes,out]=tr.querySelectorAll('input, textarea, output'); rows.push({ date:date.value||'', start:start.value||'', end:end.value||'', breakMin:parseInt(breakMin.value||0,10), notes:notes.value||'', hours:parseFloat(out.textContent||'0') }); });
-      const payload = { meta:{ worker: currentWorker(), lastUpdated:new Date().toISOString(), version:'3.1' }, rows };
+      const rows=[]; 
+      els.tableBody.querySelectorAll('tr').forEach(tr=>{ 
+        const [chk,date,start,end,breakMin,notes,out]=tr.querySelectorAll('input, textarea, output'); 
+        rows.push({ 
+          date:date.value||'', 
+          start:start.value||'', 
+          end:end.value||'', 
+          breakMin:parseInt(breakMin.value||0,10), 
+          notes:notes.value||'', 
+          hours:parseFloat(out.textContent||'0') 
+        }); 
+      });
+      const payload = { 
+        meta:{ 
+          worker: currentWorker(), 
+          lastUpdated:new Date().toISOString(), 
+          version:'3.1' 
+        }, 
+        rows 
+      };
       allWorkersData[currentWorker()] = payload; // cache local
       saveToGitHub(payload);
     }
-    function debouncedSave(){ clearTimeout(saveTimeout); saveTimeout = setTimeout(save, 800); }
 
-    async function load(){ els.tableBody.innerHTML=''; const data = await loadFromGitHub(); const list = (data&&data.rows&&data.rows.length)?data.rows:[{}]; list.forEach(r=>addRow(r)); computeGrand(); }
+    function debouncedSave(){ 
+      clearTimeout(saveTimeout); 
+      saveTimeout = setTimeout(save, 800); 
+    }
 
-    function exportCSV(){ const sep=","; const header=['Angajat','Data','Început','Sfârșit','Pauză (min)','Activitate','Ore']; const lines=[header.join(sep)]; els.tableBody.querySelectorAll('tr').forEach(tr=>{ const [c,date,start,end,breakMin,notes,out]=tr.querySelectorAll('input, textarea, output'); const row=[escapeCSV(currentWorker()),date.value,start.value,end.value,breakMin.value||0,escapeCSV(notes.value),(out.textContent||'0')]; lines.push(row.join(sep)); }); const blob=new Blob(["﻿"+lines.join("
-")],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`pontaj_${slug(currentWorker())}_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url); }
-    function escapeCSV(s){ if(s==null) return ''; const str=String(s); return (/[",;
-]/.test(str))? '"'+str.replaceAll('"','""')+'"' : str; }
+    async function load(){ 
+      els.tableBody.innerHTML=''; 
+      const data = await loadFromGitHub(); 
+      const list = (data&&data.rows&&data.rows.length)?data.rows:[{}]; 
+      list.forEach(r=>addRow(r)); 
+      computeGrand(); 
+    }
+
+    function exportCSV(){ 
+      const sep=","; 
+      const header=['Angajat','Data','Început','Sfârșit','Pauză (min)','Activitate','Ore']; 
+      const lines=[header.join(sep)]; 
+      els.tableBody.querySelectorAll('tr').forEach(tr=>{ 
+        const [c,date,start,end,breakMin,notes,out]=tr.querySelectorAll('input, textarea, output'); 
+        const row=[
+          escapeCSV(currentWorker()),
+          date.value,
+          start.value,
+          end.value,
+          breakMin.value||0,
+          escapeCSV(notes.value),
+          (out.textContent||'0')
+        ]; 
+        lines.push(row.join(sep)); 
+      }); 
+      
+      const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {type: 'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pontaj_${slug(currentWorker())}_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeCSV(s){ 
+      if(s==null) return ''; 
+      const str=String(s); 
+      return (/[",\r\n]/.test(str)) ? '"' + str.replace(/"/g, '""') + '"' : str; 
+    }
 
     function printSheet(){ window.print(); }
-    function deleteSelectedRows(){ const rows=[...els.tableBody.querySelectorAll('tr')]; const del=rows.filter(tr=>tr.querySelector('input[type="checkbox"]').checked); if(!del.length) return; if(!confirm(`Ștergi ${del.length} rând(uri)?`)) return; del.forEach(tr=>tr.remove()); if(!els.tableBody.querySelector('tr')) addRow(); computeGrand(); save(); }
+
+    function deleteSelectedRows(){ 
+      const rows=[...els.tableBody.querySelectorAll('tr')]; 
+      const del=rows.filter(tr=>tr.querySelector('input[type="checkbox"]').checked); 
+      if(!del.length) return; 
+      if(!confirm(`Ștergi ${del.length} rând(uri)?`)) return; 
+      del.forEach(tr=>tr.remove()); 
+      if(!els.tableBody.querySelector('tr')) addRow(); 
+      computeGrand(); 
+      save(); 
+    }
 
     // Events
     els.addRow.addEventListener('click', ()=>{ addRow(); save(); });
@@ -273,30 +447,86 @@
     els.exportCSV.addEventListener('click', exportCSV);
     els.printBtn.addEventListener('click', printSheet);
     els.syncData.addEventListener('click', load);
-    els.resetData.addEventListener('click', ()=>{ if(confirm('Sigur ștergi toate datele angajatului curent?')){ els.tableBody.innerHTML=''; addRow(); computeGrand(); save(); } });
+    els.resetData.addEventListener('click', ()=>{ 
+      if(confirm('Sigur ștergi toate datele angajatului curent?')){ 
+        els.tableBody.innerHTML=''; 
+        addRow(); 
+        computeGrand(); 
+        save(); 
+      } 
+    });
 
     // Modal events
-    function showGitHubModal(){ els.githubToken.value = githubConfig.token; els.githubRepo.value = githubConfig.repo; els.githubModal.style.display='flex'; }
-    function hideGitHubModal(){ els.githubModal.style.display='none'; }
+    function showGitHubModal(){ 
+      els.githubToken.value = githubConfig.token; 
+      els.githubRepo.value = githubConfig.repo; 
+      els.githubModal.style.display='flex'; 
+    }
+    
+    function hideGitHubModal(){ 
+      els.githubModal.style.display='none'; 
+    }
+    
     els.openGithubConfig.addEventListener('click', showGitHubModal);
-    els.saveGithubConfig.addEventListener('click', async ()=>{ githubConfig.token = els.githubToken.value.trim(); githubConfig.repo = els.githubRepo.value.trim(); if(!githubConfig.token||!githubConfig.repo){ showError('Te rog completează toate câmpurile!'); return; } const ok = await testGitHubConnection(); if(ok){ hideGitHubModal(); await load(); } });
+    
+    els.saveGithubConfig.addEventListener('click', async ()=>{ 
+      githubConfig.token = els.githubToken.value.trim(); 
+      githubConfig.repo = els.githubRepo.value.trim(); 
+      if(!githubConfig.token||!githubConfig.repo){ 
+        showError('Te rog completează toate câmpurile!'); 
+        return; 
+      } 
+      const ok = await testGitHubConnection(); 
+      if(ok){ 
+        hideGitHubModal(); 
+        await load(); 
+      } 
+    });
+    
     els.testConnection.addEventListener('click', testGitHubConnection);
-    els.githubModal.addEventListener('click', (e)=>{ if(e.target===els.githubModal) hideGitHubModal(); });
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && els.githubModal.style.display==='flex') hideGitHubModal(); });
+    els.githubModal.addEventListener('click', (e)=>{ 
+      if(e.target===els.githubModal) hideGitHubModal(); 
+    });
+    
+    document.addEventListener('keydown', (e)=>{ 
+      if(e.key==='Escape' && els.githubModal.style.display==='flex') hideGitHubModal(); 
+    });
 
     // Worker select
     (function initWorkers(){
-      els.workerSelect.value = WORKERS[0]; els.workerName.classList.add('hidden');
+      els.workerSelect.value = WORKERS[0]; 
+      els.workerName.classList.add('hidden');
+      
       els.workerSelect.addEventListener('change', ()=>{
-        if(els.workerSelect.value==='__custom'){ els.workerName.classList.remove('hidden'); els.workerName.focus(); }
-        else { els.workerName.classList.add('hidden'); els.workerName.value=''; }
+        if(els.workerSelect.value==='__custom'){ 
+          els.workerName.classList.remove('hidden'); 
+          els.workerName.focus(); 
+        } else { 
+          els.workerName.classList.add('hidden'); 
+          els.workerName.value=''; 
+        }
         load();
       });
-      els.workerName.addEventListener('input', ()=>{ load(); });
+      
+      els.workerName.addEventListener('input', ()=>{ 
+        // Validare nume personalizat
+        const name = els.workerName.value.trim();
+        if (name.length < 2) {
+          els.workerName.setCustomValidity('Numele trebuie să aibă cel puțin 2 caractere');
+        } else {
+          els.workerName.setCustomValidity('');
+        }
+        load(); 
+      });
     })();
 
     // Init
-    (async function init(){ els.year.textContent = new Date().getFullYear(); showGitHubModal(); })();
+    (async function init(){ 
+      els.year.textContent = new Date().getFullYear(); 
+      // Nu mai afișa automat modalul GitHub la încărcare
+      // showGitHubModal(); 
+      addRow(); // Adaugă un rând inițial
+    })();
   </script>
 </body>
 </html>
