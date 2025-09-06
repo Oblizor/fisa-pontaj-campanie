@@ -361,6 +361,263 @@
       load();                       // încarcă din localStorage pentru primul angajat
       if (!els.tableBody.querySelector("tr")) addRow({}); // asigură un rând
     })();
+    <!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fișă de Pontaj – Cramă (GitHub Storage)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial; }
+    @page { size: A4; margin: 14mm; }
+    @media print {
+      .no-print { display: none !important; }
+      .print-block { display: block !important; }
+      .shadow-md, .shadow { box-shadow: none !important; }
+      .ring-1 { box-shadow: none !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+      tr { page-break-inside: avoid; }
+    }
+    .focusable:focus { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,.6); border-radius: .5rem; }
+    .status-indicator { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; }
+    .status-saved   { background-color:#10b981; }
+    .status-saving  { background-color:#f59e0b; animation:pulse 2s infinite; }
+    .status-error   { background-color:#ef4444; }
+    .status-offline { background-color:#6b7280; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .github-setup { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <header class="bg-white shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-semibold">Fișă de Pontaj – Cramă</h1>
+        <div class="flex items-center mt-1">
+          <span id="statusIndicator" class="status-indicator status-offline"></span>
+          <span id="statusText" class="text-sm text-gray-500">Configurează GitHub</span>
+        </div>
+      </div>
+      <div class="text-sm text-gray-500">Versiunea 3.3</div>
+    </div>
+  </header>
+
+  <!-- Panou status GitHub -->
+  <div id="githubStatus" class="mb-4 p-3 rounded-lg github-setup text-white">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="font-medium">GitHub Storage</h3>
+        <p class="text-sm opacity-90">Datele se sincronizează cu repository-ul GitHub configurat.</p>
+      </div>
+      <button id="openGithubConfig" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-sm">Configurează</button>
+    </div>
+  </div>
+
+  <!-- Modal configurare GitHub -->
+  <div id="githubModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-lg max-w-md w-full p-6">
+      <h2 class="text-lg font-semibold mb-4">Configurare GitHub Storage</h2>
+      <div class="space-y-4">
+        <div>
+          <label for="githubToken" class="block text-sm font-medium text-gray-700">Token de acces GitHub</label>
+          <input id="githubToken" type="password" class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+          <p class="mt-1 text-xs text-gray-500">Permisiune minimă: <strong>Contents: Read/Write</strong>.</p>
+        </div>
+        <div>
+          <label for="githubRepo" class="block text-sm font-medium text-gray-700">Repository (user/repo)</label>
+          <input id="githubRepo" type="text" class="mt-1 block w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="username/pontaj-data" />
+        </div>
+        <div class="flex gap-2">
+          <button id="saveGithubConfig" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Salvează</button>
+          <button id="testConnection" class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">Test conexiune</button>
+        </div>
+        <div id="githubError" class="mt-2 text-sm text-red-600 hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <main id="content" class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+    <!-- Panou acțiuni -->
+    <section class="no-print mb-4 grid grid-cols-2 sm:flex gap-2">
+      <button id="addRow" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Adaugă rând</button>
+      <button id="deleteSelected" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700">Șterge selectatele</button>
+      <button id="exportCSV" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Export CSV</button>
+      <button id="printBtn" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-800">Printează</button>
+      <button id="resetData" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600">Resetează date</button>
+      <button id="syncData" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700">Sincronizează</button>
+    </section>
+
+    <!-- Formular + tabel -->
+    <form id="timesheetForm" class="bg-white rounded-xl shadow-md ring-1 ring-gray-200 overflow-hidden">
+      <div class="p-4 sm:p-6">
+        <div class="max-w-sm">
+          <label for="workerSelect" class="block text-sm font-medium text-gray-700">Angajat (Cramă)</label>
+          <select id="workerSelect" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+            <option value="Prică Jenița">Prică Jenița</option>
+            <option value="Neagu Marian">Neagu Marian</option>
+            <option value="Banu Mitică">Banu Mitică</option>
+            <option value="Prică Emilian">Prică Emilian</option>
+            <option value="__custom">Alt nume…</option>
+          </select>
+          <input id="workerName" type="text" class="mt-2 hidden w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="Introdu numele" />
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-3 py-2">✔</th>
+              <th class="px-3 py-2">Data</th>
+              <th class="px-3 py-2">Început</th>
+              <th class="px-3 py-2">Sfârșit</th>
+              <th class="px-3 py-2">Pauză (min)</th>
+              <th class="px-3 py-2">Activitate</th>
+              <th class="px-3 py-2 text-right">Ore</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-gray-200"></tbody>
+          <tfoot class="bg-gray-50">
+            <tr>
+              <td colspan="6" class="px-3 py-3 text-right font-semibold">Total general (ore):</td>
+              <td class="px-3 py-3 text-right"><span id="grandTotal" class="font-bold">0.00</span></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </form>
+  </main>
+
+  <template id="rowTemplate">
+    <tr>
+      <td class="px-3 py-2"><input type="checkbox" /></td>
+      <td class="px-3 py-2"><input type="date" class="focusable w-40 border px-2 py-1 rounded-md" /></td>
+      <td class="px-3 py-2"><input type="time" step="60" class="focusable w-28 border px-2 py-1 rounded-md" /></td>
+      <td class="px-3 py-2">
+        <div class="flex items-center gap-2">
+          <input type="time" step="60" class="focusable w-28 border px-2 py-1 rounded-md" />
+          <label class="inline-flex items-center gap-1 text-xs text-gray-600">
+            <input type="checkbox" class="next-day-toggle"> Zi următoare
+          </label>
+        </div>
+      </td>
+      <td class="px-3 py-2"><input type="number" min="0" step="5" value="0" class="focusable w-20 border px-2 py-1 rounded-md" /></td>
+      <td class="px-3 py-2"><textarea rows="1" class="focusable w-full border px-2 py-1 rounded-md"></textarea></td>
+      <td class="px-3 py-2 text-right"><output class="rowTotal font-medium">0.00</output></td>
+    </tr>
+  </template>
+
+  <script>
+    // --- State & helpers ---
+    const WORKERS = ["Prică Jenița","Neagu Marian","Banu Mitică","Prică Emilian"];
+    const els = {
+      tableBody: document.getElementById("tableBody"),
+      rowTmpl: document.getElementById("rowTemplate"),
+      grandTotal: document.getElementById("grandTotal"),
+      addRow: document.getElementById("addRow"),
+      deleteSelected: document.getElementById("deleteSelected"),
+      exportCSV: document.getElementById("exportCSV"),
+      printBtn: document.getElementById("printBtn"),
+      resetData: document.getElementById("resetData"),
+      syncData: document.getElementById("syncData"),
+      workerSelect: document.getElementById("workerSelect"),
+      workerName: document.getElementById("workerName"),
+      githubModal: document.getElementById("githubModal"),
+      githubToken: document.getElementById("githubToken"),
+      githubRepo: document.getElementById("githubRepo"),
+      saveGithubConfig: document.getElementById("saveGithubConfig"),
+      testConnection: document.getElementById("testConnection"),
+      openGithubConfig: document.getElementById("openGithubConfig"),
+      statusIndicator: document.getElementById("statusIndicator"),
+      statusText: document.getElementById("statusText"),
+      githubError: document.getElementById("githubError"),
+    };
+
+    let githubConfig = { token: '', repo: '' };
+    const slug = s => (s||"").normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+
+    const currentWorker = () => els.workerSelect.value === "__custom" ? (els.workerName.value.trim() || "custom") : els.workerSelect.value;
+    const getFileName = () => `data/pontaj_${slug(currentWorker())}.json`;
+
+    function updateStatus(status,msg){ els.statusIndicator.className=`status-indicator status-${status}`; els.statusText.textContent=msg; }
+    function showError(msg){ els.githubError.textContent=msg; els.githubError.classList.remove("hidden"); }
+
+    // --- GitHub API ---
+    async function githubRequest(endpoint, options={}) {
+      if (!githubConfig.token || !githubConfig.repo) throw new Error("GitHub nu e configurat");
+      const [owner, repo] = githubConfig.repo.split("/");
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${endpoint}`;
+      const resp = await fetch(url,{...options,headers:{'Authorization':`Bearer ${githubConfig.token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json',...(options.headers||{})}});
+      if(!resp.ok){ const e=await resp.json().catch(()=>({message:`HTTP ${resp.status}`})); throw new Error(e.message); }
+      return resp.json();
+    }
+
+    async function saveToGitHub(data){
+      updateStatus("saving","Salvează...");
+      try{
+        const path=getFileName();
+        const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+        let sha; try{ const existing=await githubRequest(path); sha=existing.sha; }catch{}
+        const payload={message:`Update: ${currentWorker()} – ${new Date().toLocaleString("ro-RO")}`,content,...(sha?{sha}:{})};
+        await githubRequest(path,{method:"PUT",body:JSON.stringify(payload)});
+        updateStatus("saved","Sincronizat");
+      }catch(e){updateStatus("error",e.message);}
+    }
+
+    async function loadFromGitHub(){
+      try{
+        updateStatus("saving","Încarcă...");
+        const r=await githubRequest(getFileName());
+        const content=JSON.parse(decodeURIComponent(escape(atob(r.content))));
+        updateStatus("saved","Încărcat");
+        return content;
+      }catch(e){updateStatus("offline","Date locale");return null;}
+    }
+
+    async function testGitHubConnection(){
+      try{
+        const [owner,repo]=githubConfig.repo.split("/");
+        const r=await fetch(`https://api.github.com/repos/${owner}/${repo}`,{headers:{Authorization:`Bearer ${githubConfig.token}`}});
+        if(r.ok){updateStatus("saved",`Conectat la ${owner}/${repo}`);return true;}
+        throw new Error(`HTTP ${r.status}`);
+      }catch(e){updateStatus("error",e.message);return false;}
+    }
+
+    // --- Rows ---
+    function computeDuration(start,end,breakMin,isNextDay){
+      if(!start||!end)return 0;
+      const [sh,sm]=start.split(":").map(Number);
+      const [eh,em]=end.split(":").map(Number);
+      let s=sh*60+sm, e=eh*60+em;
+      if(isNextDay||e<s)e+=1440;
+      return Math.max(0,e-s-(breakMin||0))/60;
+    }
+
+    function computeGrand(){
+      let t=0; els.tableBody.querySelectorAll("tr").forEach(tr=>t+=parseFloat(tr.querySelector("output.rowTotal").textContent||0));
+      els.grandTotal.textContent=t.toFixed(2);
+    }
+
+    function addRow(data){
+      const node=els.rowTmpl.content.cloneNode(true);
+      const [chk,date,start,end,breakMin,notes,out]=node.querySelectorAll("input, textarea, output");
+      const nextDay=node.querySelector("input.next-day-toggle");
+      if(data){date.value=data.date||"";start.value=data.start||"";end.value=data.end||"";breakMin.value=data.breakMin||0;notes.value=data.notes||"";if(nextDay)nextDay.checked=!!data.nextDay;}
+      const recalc=()=>{out.textContent=computeDuration(start.value,end.value,breakMin.value,nextDay&&nextDay.checked).toFixed(2);computeGrand();debouncedSave();};
+      [date,start,end,breakMin,notes,nextDay].forEach(el=>el&&el.addEventListener("input",recalc));
+      recalc(); els.tableBody.appendChild(node);
+    }
+
+    function save(){
+      const rows=[]; els.tableBody.querySelectorAll("tr").forEach(tr=>{
+        const [chk,date,start,end,breakMin,notes,out]=tr.querySelectorAll("input, textarea, output");
+        const nextDay=tr.querySelector("input.next-day-toggle");
+        rows.push({date:date.value,start:start.value,end:end.value,nextDay:!!(nextDay&&nextDay.checked),breakMin:parseInt(breakMin.value||0,10
+
   </script>
 </body>
 </html>
