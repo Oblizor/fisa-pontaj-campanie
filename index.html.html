@@ -1,0 +1,340 @@
+<!-- <!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fișă de Pontaj – Campanie (Interactivă)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    /* Print-friendly A4 */
+    @page { size: A4; margin: 14mm; }
+    @media print {
+      .no-print { display: none !important; }
+      .print-block { display: block !important; }
+      .shadow-md, .shadow { box-shadow: none !important; }
+      .ring-1 { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
+      input, button, .btn { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      table { page-break-inside: auto; }
+      tr { page-break-inside: avoid; page-break-after: auto; }
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+    }
+    /* Make time inputs pickers visible on dark modes */
+    .time-input::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <main class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+    <!-- Header -->
+    <section class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Fișă de Pontaj – Campanie</h1>
+          <p class="text-gray-600">Completare rapidă, totaluri automate, export CSV & versiune de tipărire.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-auto">
+          <label class="flex items-center gap-2"> 
+            <span class="w-28 text-sm text-gray-600">Organizație</span>
+            <input id="org" class="flex-1 p-2 border rounded-md" placeholder="Ex: Crama Darie" />
+          </label>
+          <label class="flex items-center gap-2">
+            <span class="w-28 text-sm text-gray-600">Campanie</span>
+            <input id="campaign" class="flex-1 p-2 border rounded-md" placeholder="Ex: Recoltare 2025" />
+          </label>
+          <label class="flex items-center gap-2">
+            <span class="w-28 text-sm text-gray-600">Data</span>
+            <input id="sheetDate" type="date" class="flex-1 p-2 border rounded-md" />
+          </label>
+        </div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-3 no-print">
+        <button id="addRowBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-3 rounded-lg shadow">Adaugă angajat</button>
+        <button id="addManyBtn" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-lg shadow">+5 rânduri</button>
+        <button id="exportCsvBtn" class="btn bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded-lg shadow">Export CSV</button>
+        <button id="printBtn" class="btn bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-3 rounded-lg shadow">Tipărește</button>
+        <button id="clearBtn" class="btn bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg shadow">Golește tot</button>
+        <label class="ml-auto flex items-center gap-2 text-sm text-gray-700"><input id="roundQuarter" type="checkbox" class="scale-110" /> Rotunjire la 0,25 h</label>
+      </div>
+    </section>
+
+    <!-- Table -->
+    <section class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="overflow-x-auto">
+        <table id="pontaj-table" class="min-w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">#</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nume angajat</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Funcție (opțional)</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Interval 1</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pauză (min)</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Interval 2</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Total ore</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody id="table-body" class="divide-y divide-gray-200">
+          </tbody>
+          <tfoot class="bg-gray-50">
+            <tr>
+              <td colspan="6" class="px-4 py-3 text-right font-semibold">Total general (ore):</td>
+              <td class="px-4 py-3"><span id="grandTotal" class="font-bold">0.00</span></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- Signatures / Footer for print -->
+    <section class="bg-white rounded-xl shadow-md p-4 sm:p-6 mt-6 print-block hidden">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div>
+          <p class="font-semibold">Întocmit de:</p>
+          <div class="h-16 border-b"></div>
+        </div>
+        <div>
+          <p class="font-semibold">Confirmat (Responsabil campanie):</p>
+          <div class="h-16 border-b"></div>
+        </div>
+        <div>
+          <p class="font-semibold">Reprezentant legal / HR:</p>
+          <div class="h-16 border-b"></div>
+        </div>
+      </div>
+      <p class="mt-6 text-sm text-gray-600">Organizație: <span id="orgPrint"></span> • Campanie: <span id="campPrint"></span> • Data: <span id="datePrint"></span></p>
+    </section>
+  </main>
+
+  <template id="rowTemplate">
+    <tr class="employee-row">
+      <td class="px-4 py-3 align-top">
+        <span class="row-index text-gray-500"></span>
+      </td>
+      <td class="px-4 py-3 align-top">
+        <input type="text" placeholder="Nume Prenume" class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 name" />
+      </td>
+      <td class="px-4 py-3 align-top">
+        <input type="text" placeholder="Ex: Zilier, Operator" class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 role" />
+      </td>
+      <td class="px-4 py-3 align-top">
+        <div class="flex items-center gap-2">
+          <input type="time" class="time-input p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 time-start1" />
+          <span class="text-gray-500">–</span>
+          <input type="time" class="time-input p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 time-end1" />
+        </div>
+      </td>
+      <td class="px-4 py-3 align-top">
+        <input type="number" min="0" step="1" placeholder="0" class="w-24 p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 break-mins" />
+      </td>
+      <td class="px-4 py-3 align-top">
+        <div class="flex items-center gap-2">
+          <input type="time" class="time-input p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 time-start2" />
+          <span class="text-gray-500">–</span>
+          <input type="time" class="time-input p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 time-end2" />
+        </div>
+      </td>
+      <td class="px-4 py-3 align-top">
+        <span class="total-hours font-semibold">0.00</span>
+      </td>
+      <td class="px-4 py-3 align-top text-right">
+        <div class="flex gap-2 justify-end">
+          <button class="dup-row text-indigo-600 hover:text-indigo-800">Duplica</button>
+          <button class="delete-row text-red-600 hover:text-red-800">Șterge</button>
+        </div>
+      </td>
+    </tr>
+  </template>
+
+  <script>
+    const tableBody = document.getElementById('table-body');
+    const addRowBtn = document.getElementById('addRowBtn');
+    const addManyBtn = document.getElementById('addManyBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const printBtn = document.getElementById('printBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const roundQuarter = document.getElementById('roundQuarter');
+
+    const org = document.getElementById('org');
+    const campaign = document.getElementById('campaign');
+    const sheetDate = document.getElementById('sheetDate');
+
+    const orgPrint = document.getElementById('orgPrint');
+    const campPrint = document.getElementById('campPrint');
+    const datePrint = document.getElementById('datePrint');
+
+    const STORAGE_KEY = 'pontaj-campanie-v1';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Restore state
+      restoreState();
+
+      // Live print header bind
+      [org, campaign, sheetDate].forEach(el => el.addEventListener('input', syncHeaderToPrint));
+      syncHeaderToPrint();
+
+      addRowBtn.addEventListener('click', () => createRow());
+      addManyBtn.addEventListener('click', () => { for (let i=0; i<5; i++) createRow(); });
+      exportCsvBtn.addEventListener('click', exportCSV);
+      printBtn.addEventListener('click', () => window.print());
+      clearBtn.addEventListener('click', clearAll);
+      roundQuarter.addEventListener('change', updateAllTotals);
+
+      if (!tableBody.children.length) createRow();
+    });
+
+    function createRow(prefill = {}) {
+      const tpl = document.getElementById('rowTemplate');
+      const tr = tpl.content.firstElementChild.cloneNode(true);
+      tableBody.appendChild(tr);
+      attachRowListeners(tr);
+      // Prefill if provided
+      if (prefill.name) tr.querySelector('.name').value = prefill.name;
+      if (prefill.role) tr.querySelector('.role').value = prefill.role;
+      ['time-start1','time-end1','time-start2','time-end2'].forEach(k=>{
+        if (prefill[k]) tr.querySelector('.'+k).value = prefill[k];
+      });
+      if (typeof prefill.breakMins === 'number') tr.querySelector('.break-mins').value = prefill.breakMins;
+      renumberRows();
+      updateRowTotal(tr);
+      saveState();
+      return tr;
+    }
+
+    function attachRowListeners(row){
+      row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+        updateRowTotal(row);
+        saveState();
+      }));
+      row.querySelector('.delete-row').addEventListener('click', () => { row.remove(); renumberRows(); updateAllTotals(); saveState(); });
+      row.querySelector('.dup-row').addEventListener('click', () => {
+        const copy = readRow(row);
+        createRow(copy);
+      });
+    }
+
+    function timeDiffMinutes(start, end){
+      if (!start || !end) return 0;
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      let startM = sh*60 + sm;
+      let endM = eh*60 + em;
+      // Allow crossing midnight: if end < start, add 24h
+      if (endM < startM) endM += 24*60;
+      return Math.max(0, endM - startM);
+    }
+
+    function roundToQuarterHours(h){
+      if (!roundQuarter.checked) return h;
+      const q = 0.25; // 15 min
+      return Math.round(h / q) * q;
+    }
+
+    function updateRowTotal(row){
+      const s1 = row.querySelector('.time-start1').value;
+      const e1 = row.querySelector('.time-end1').value;
+      const s2 = row.querySelector('.time-start2').value;
+      const e2 = row.querySelector('.time-end2').value;
+      const breakM = parseInt(row.querySelector('.break-mins').value || '0', 10);
+
+      let mins = timeDiffMinutes(s1,e1) + timeDiffMinutes(s2,e2) - Math.max(0, breakM);
+      mins = Math.max(0, mins);
+      let hours = mins / 60;
+      hours = roundToQuarterHours(hours);
+
+      row.querySelector('.total-hours').textContent = hours.toFixed(2);
+      updateGrandTotal();
+    }
+
+    function updateAllTotals(){
+      tableBody.querySelectorAll('.employee-row').forEach(updateRowTotal);
+      updateGrandTotal();
+    }
+
+    function updateGrandTotal(){
+      const total = Array.from(tableBody.querySelectorAll('.total-hours'))
+        .map(el => parseFloat(el.textContent||'0'))
+        .reduce((a,b)=>a+b,0);
+      document.getElementById('grandTotal').textContent = total.toFixed(2);
+    }
+
+    function renumberRows(){
+      Array.from(tableBody.children).forEach((row, idx) => {
+        const idxEl = row.querySelector('.row-index');
+        if (idxEl) idxEl.textContent = String(idx+1);
+      });
+    }
+
+    function readRow(row){
+      return {
+        name: row.querySelector('.name').value.trim(),
+        role: row.querySelector('.role').value.trim(),
+        'time-start1': row.querySelector('.time-start1').value,
+        'time-end1': row.querySelector('.time-end1').value,
+        'time-start2': row.querySelector('.time-start2').value,
+        'time-end2': row.querySelector('.time-end2').value,
+        breakMins: parseInt(row.querySelector('.break-mins').value || '0', 10)
+      };
+    }
+
+    function exportCSV(){
+      const header = ['Organization','Campaign','Date','Row','Name','Role','Start1','End1','Break(min)','Start2','End2','TotalHours'];
+      const rows = [];
+      const meta = [org.value, campaign.value, sheetDate.value];
+      Array.from(tableBody.children).forEach((row, idx) => {
+        const r = readRow(row);
+        const total = row.querySelector('.total-hours').textContent;
+        rows.push([...meta, idx+1, r.name, r.role, r['time-start1'], r['time-end1'], r.breakMins, r['time-start2'], r['time-end2'], total]);
+      });
+      const csv = [header.join(','), ...rows.map(r => r.map(val => csvEscape(val)).join(','))].join('\n');
+      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const datePart = sheetDate.value || new Date().toISOString().slice(0,10);
+      a.download = `pontaj_${datePart}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(val){
+      if (val === null || val === undefined) return '';
+      const s = String(val);
+      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+
+    function clearAll(){
+      if (!confirm('Sigur dorești să golești toate datele?')) return;
+      tableBody.innerHTML = '';
+      createRow();
+      org.value = campaign.value = '';
+      sheetDate.value = '';
+      saveState();
+    }
+
+    function syncHeaderToPrint(){
+      orgPrint.textContent = org.value || '—';
+      campPrint.textContent = campaign.value || '—';
+      datePrint.textContent = sheetDate.value || new Date().toISOString().slice(0,10);
+    }
+
+    function saveState(){
+      const data = {
+        org: org.value,
+        campaign: campaign.value,
+        date: sheetDate.value,
+        roundQuarter: roundQuarter.checked,
+        rows: Array.from(tableBody.children).map(readRow)
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      updateAllTotals();
+    }
+
+    function restoreState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
