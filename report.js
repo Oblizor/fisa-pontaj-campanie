@@ -31,7 +31,7 @@ function generateReport(dataDir, fromDate, toDate) {
   for (const file of files) {
     const fullPath = path.join(dataDir, file);
     const json = loadJson(fullPath);
-    const worker = json.meta?.worker || file;
+    const worker = json.meta?.worker || path.basename(file, '.json').replace(/^pontaj_/, '');
     for (const row of json.rows || []) {
       if (!row.date) continue;
       const dateObj = new Date(row.date);
