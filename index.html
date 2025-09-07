@@ -11,6 +11,8 @@
   <title>Fișă de Pontaj – Cramă (GitHub Storage)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
     body { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial; }
 
@@ -163,31 +165,40 @@
     <div class="max-w-5xl mx-auto px-4 py-3 text-xs text-gray-500 dark:text-gray-400">© <span id="year"></span> – Fișă de Pontaj Cramă</div>
   </footer>
 
-  <template id="rowTemplate">
-    <tr>
-      <td class="px-3 py-2 align-top"><input type="checkbox" aria-label="Selectează rând" class="focusable w-4 h-4" /></td>
-      <td class="px-3 py-2 align-top"><input type="date" class="focusable block w-40 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
-      <td class="px-3 py-2 align-top">
-        <div class="flex items-center gap-2">
-          <button type="button" class="start-stop focusable px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white">Start</button>
-          <span class="current-time text-xs text-gray-500"></span>
-          <input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
-        </div>
-      </td>
-      <td class="px-3 py-2 align-top">
-        <div class="flex items-center gap-2">
-          <input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
-          <label class="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 select-none">
-            <input type="checkbox" class="next-day-toggle focusable">
-            <span>Zi următoare</span>
-          </label>
-        </div>
-      </td>
-      <td class="px-3 py-2 align-top"><input type="number" min="0" step="5" value="0" class="focusable block w-24 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
-      <td class="px-3 py-2 align-top"><textarea rows="1" class="focusable block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" placeholder="ex: cules, sortare..."></textarea></td>
-      <td class="px-3 py-2 align-top text-right"><output class="rowTotal font-medium">0.00</output></td>
-    </tr>
-  </template>
+<template id="rowTemplate">
+  <tr>
+    <td class="px-3 py-2 align-top">
+      <input type="checkbox" aria-label="Selectează rând" class="row-select focusable w-4 h-4" />
+    </td>
+    <td class="px-3 py-2 align-top">
+      <input class="row-date focusable block w-40 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
+    </td>
+    <td class="px-3 py-2 align-top">
+      <div class="flex items-center gap-2">
+        <button type="button" class="start-stop focusable px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold">Start</button>
+        <input type="time" step="60" class="row-start focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
+      </div>
+    </td>
+    <td class="px-3 py-2 align-top">
+      <div class="flex items-center gap-2">
+        <input type="time" step="60" class="row-end focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
+        <label class="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 select-none">
+          <input type="checkbox" class="next-day-toggle focusable" />
+          <span>Zi următoare</span>
+        </label>
+      </div>
+    </td>
+    <td class="px-3 py-2 align-top">
+      <input type="number" min="0" step="5" value="0" class="row-break focusable block w-24 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
+    </td>
+    <td class="px-3 py-2 align-top">
+      <textarea rows="1" class="row-notes focusable block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" placeholder="ex: cules, sortare..."></textarea>
+    </td>
+    <td class="px-3 py-2 align-top text-right">
+      <output class="rowTotal font-medium">0.00</output>
+    </td>
+  </tr>
+</template>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -370,11 +381,8 @@
         if (!data || Object.keys(data).length === 0) {
           const lastRow = els.tableBody.querySelector("tr:last-child");
           if (lastRow) {
-            const lastInputs = lastRow.querySelectorAll("input");
-            data = {
-              date: lastInputs[1]?.value || "",
-              start: lastInputs[3]?.value || ""
-            };
+            const lastEnd = lastRow.querySelectorAll('input[type="time"]')[1]?.value || "";
+            data = { start: lastEnd };
           }
         }
 
@@ -384,8 +392,15 @@
         const startStopBtn = node.querySelector("button.start-stop");
         const currentTime = node.querySelector(".current-time");
 
+        flatpickr(date, {
+          dateFormat: "Y-m-d",
+          defaultDate: data && data.date ? data.date : null,
+          minDate: new Date(new Date().getFullYear(), 0, 1),
+          maxDate: new Date(new Date().getFullYear(), 11, 31)
+        });
+
         if (data) {
-          date.value = data.date || ""; start.value = data.start || ""; end.value = data.end || "";
+          start.value = data.start || ""; end.value = data.end || "";
           breakMin.value = data.breakMin ?? 0; notes.value = data.notes || "";
           if (nextDay && typeof data.nextDay === "boolean") nextDay.checked = data.nextDay;
         }
@@ -456,7 +471,7 @@
         els.syncData.addEventListener("click", load);
         
         els.resetData.addEventListener("click", () => {
-          if (!confirm(`Atenție! Aceasta va șterge TOATE datele pentru ${currentWorker()} din browser și de pe GitHub. Continui?`)) return;
+          if (!confirm(`Atenție! Aceasta va șterge TOA datele pentru ${currentWorker()} din browser și de pe GitHub. Continui?`)) return;
           localStorage.removeItem(getLocalStorageKey());
           els.tableBody.innerHTML = "";
           addRowUI({});
