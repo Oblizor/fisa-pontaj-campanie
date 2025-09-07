@@ -47,4 +47,5 @@ No activity found for selected period.
 Pagina `bazine.html` oferă un prototip de aplicație pentru gestionarea vinului într-o cramă. Poți defini bazine cu capacitate și volum curent, loturi de vin și poți înregistra operații de umplere, transvazare și tratamente. Datele sunt salvate în `localStorage`, iar istoricul fiecărui bazin și lot poate fi consultat rapid.
 
 Deschide `home.html` și urmează linkul "Crama" pentru a accesa aplicația.
+
 Lista de bazine este preîncărcată din `data/bazine.json`, fiecare rezervor având și informații despre manta de răcire, deburbare, fermentație pentru roșu și poziționare interior/exterior.
