@@ -67,7 +67,25 @@ if (require.main === module) {
   program.parse(process.argv);
 
   const { dir, from, to } = program.opts();
-  const rep = generateReport(dir, from, to);
+
+  const fromDate = new Date(from);
+  if (isNaN(fromDate)) {
+    console.error(`Invalid --from date: ${from}`);
+    process.exit(1);
+  }
+
+  const toDate = new Date(to);
+  if (isNaN(toDate)) {
+    console.error(`Invalid --to date: ${to}`);
+    process.exit(1);
+  }
+
+  if (fromDate > toDate) {
+    console.error('--from date must be less than or equal to --to date');
+    process.exit(1);
+  }
+
+  const rep = generateReport(dir, fromDate, toDate);
   const formatted = formatReport(rep);
   if (formatted) {
     console.log(formatted);
