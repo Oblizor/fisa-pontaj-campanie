@@ -167,7 +167,13 @@
     <tr>
       <td class="px-3 py-2 align-top"><input type="checkbox" aria-label="Selectează rând" class="focusable w-4 h-4" /></td>
       <td class="px-3 py-2 align-top"><input type="date" class="focusable block w-40 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
-      <td class="px-3 py-2 align-top"><input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
+      <td class="px-3 py-2 align-top">
+        <div class="flex items-center gap-2">
+          <button type="button" class="start-stop focusable px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white">Start</button>
+          <span class="current-time text-xs text-gray-500"></span>
+          <input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
+        </div>
+      </td>
       <td class="px-3 py-2 align-top">
         <div class="flex items-center gap-2">
           <input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
@@ -375,6 +381,8 @@
         const node = els.rowTmpl.content.cloneNode(true);
         const [chk, date, start, end, breakMin, notes, out] = node.querySelectorAll("input, textarea, output");
         const nextDay = node.querySelector("input.next-day-toggle");
+        const startStopBtn = node.querySelector("button.start-stop");
+        const currentTime = node.querySelector(".current-time");
 
         if (data) {
           date.value = data.date || ""; start.value = data.start || ""; end.value = data.end || "";
@@ -390,6 +398,40 @@
         };
 
         [date, start, end, breakMin, notes, nextDay].forEach(el => el && el.addEventListener("input", recalc));
+
+        let timer = null;
+        startStopBtn.addEventListener("click", () => {
+          if (timer) {
+            clearInterval(timer);
+            timer = null;
+            const now = new Date();
+            const t = now.toTimeString().slice(0,5);
+            end.value = t;
+            currentTime.textContent = t;
+            startStopBtn.textContent = "Start";
+            startStopBtn.classList.remove("bg-red-600", "hover:bg-red-700");
+            startStopBtn.classList.add("bg-green-600", "hover:bg-green-700");
+            recalc();
+          } else {
+            const now = new Date();
+            const t = now.toTimeString().slice(0,5);
+            start.value = t;
+            end.value = t;
+            currentTime.textContent = t;
+            startStopBtn.textContent = "Stop";
+            startStopBtn.classList.remove("bg-green-600", "hover:bg-green-700");
+            startStopBtn.classList.add("bg-red-600", "hover:bg-red-700");
+            recalc();
+            timer = setInterval(() => {
+              const now = new Date();
+              const tt = now.toTimeString().slice(0,5);
+              currentTime.textContent = tt;
+              end.value = tt;
+              recalc();
+            }, 1000);
+          }
+        });
+
         recalc();
         const tr = node.querySelector("tr");
         tr.classList.add("fade-in");
