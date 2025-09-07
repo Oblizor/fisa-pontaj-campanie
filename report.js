@@ -27,7 +27,17 @@ function generateReport(dataDir, fromDate, toDate) {
   const from = fromDate ? new Date(fromDate) : null;
   const to = toDate ? new Date(toDate) : null;
   const report = {};
-  const files = fs.readdirSync(dataDir).filter(f => f.startsWith('pontaj_') && f.endsWith('.json'));
+  let files;
+  try {
+    files = fs
+      .readdirSync(dataDir)
+      .filter(f => f.startsWith('pontaj_') && f.endsWith('.json'));
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      throw new Error(`Data directory not found: ${dataDir}`);
+    }
+    throw err;
+  }
   for (const file of files) {
     const fullPath = path.join(dataDir, file);
     const json = loadJson(fullPath);

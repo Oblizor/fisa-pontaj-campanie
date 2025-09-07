@@ -67,3 +67,10 @@ test('CLI reports hours and shows no activity when appropriate', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+test('generateReport throws descriptive error when directory missing', () => {
+  const missingDir = path.join(os.tmpdir(), 'pontaj-missing-test-');
+  fs.rmSync(missingDir, { recursive: true, force: true });
+  expect(() => generateReport(missingDir, '2025-01-01', '2025-01-02'))
+    .toThrow(`Data directory not found: ${missingDir}`);
+});
