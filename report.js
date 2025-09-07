@@ -68,7 +68,12 @@ if (require.main === module) {
 
   const { dir, from, to } = program.opts();
   const rep = generateReport(dir, from, to);
-  console.log(formatReport(rep));
+  const formatted = formatReport(rep);
+  if (formatted) {
+    console.log(formatted);
+  } else {
+    console.log('No activity.');
+  }
 }
 
 module.exports = { generateReport, formatReport };
