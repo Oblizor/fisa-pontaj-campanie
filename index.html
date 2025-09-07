@@ -327,22 +327,31 @@
         els.grandTotal.textContent = total.toFixed(2);
       };
 
-      const getTableData = () => {
-        const rows = [];
-        els.tableBody.querySelectorAll("tr").forEach(tr => {
-          const [chk, date, start, end, breakMin, notes, out] = tr.querySelectorAll("input, textarea, output");
-          const nextDay = tr.querySelector("input.next-day-toggle");
-          rows.push({
-            date: date.value || "", start: start.value || "", end: end.value || "",
-            nextDay: !!(nextDay && nextDay.checked), breakMin: parseInt(breakMin.value || 0, 10),
-            notes: notes.value || "",
-          });
-        });
-        return {
-          meta: { worker: currentWorker(), lastUpdated: new Date().toISOString(), version: "3.4" },
-          rows,
-        };
-      };
+    const getTableData = () => {
+        const rows = [];
+        els.tableBody.querySelectorAll("tr").forEach(tr => {
+          // Folosim selectori de clasă specifici, nu selectori generici de tag-uri
+          const dateEl = tr.querySelector(".row-date");
+          const startEl = tr.querySelector(".row-start");
+          const endEl = tr.querySelector(".row-end");
+          const breakEl = tr.querySelector(".row-break");
+          const notesEl = tr.querySelector(".row-notes");
+          const nextDayEl = tr.querySelector(".next-day-toggle");
+
+          rows.push({
+            date: dateEl ? dateEl.value : "",
+            start: startEl ? startEl.value : "",
+            end: endEl ? endEl.value : "",
+            nextDay: !!(nextDayEl && nextDayEl.checked),
+            breakMin: breakEl ? parseInt(breakEl.value || 0, 10) : 0,
+            notes: notesEl ? notesEl.value : "",
+          });
+        });
+        return {
+          meta: { worker: currentWorker(), lastUpdated: new Date().toISOString(), version: "3.4" },
+          rows,
+        };
+      };
 
       function save() {
         const data = getTableData();
