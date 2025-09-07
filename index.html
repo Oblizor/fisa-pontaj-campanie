@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
   <title>Fișă de Pontaj – Cramă (GitHub Storage)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -33,21 +38,27 @@
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
     .github-setup { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+
+    .fade-in { animation: fadeIn 0.2s ease-out; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(-4px); } to { opacity:1; transform: translateY(0); } }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
   <a href="#content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-white px-3 py-2 rounded-md shadow">Sari la conținut</a>
 
-  <header class="bg-white shadow-sm no-print">
+  <header class="bg-white dark:bg-gray-800 shadow-sm no-print">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
       <div>
-        <h1 class="text-xl sm:text-2xl font-semibold">Fișă de Pontaj – Cramă</h1>
+        <h1 class="text-xl sm:text-2xl font-semibold dark:text-gray-100">Fișă de Pontaj – Cramă</h1>
         <div id="statusContainer" class="flex items-center mt-1">
           <span id="statusIndicator" class="status-indicator status-offline"></span>
-          <span id="statusText" class="text-sm text-gray-500">Configurează GitHub</span>
+          <span id="statusText" class="text-sm text-gray-500 dark:text-gray-400">Configurează GitHub</span>
         </div>
       </div>
-      <div class="text-sm text-gray-500">Versiunea 3.4</div>
+      <div class="flex items-center gap-4">
+        <button id="themeToggle" class="focusable px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700">🌙</button>
+        <div class="text-sm text-gray-500 dark:text-gray-400">Versiunea 3.4</div>
+      </div>
     </div>
   </header>
 
@@ -64,26 +75,26 @@
     </div>
 
     <div id="githubModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 hidden no-print">
-      <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 sm:p-8" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 sm:p-8" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="flex justify-between items-center mb-4">
           <h2 id="modal-title" class="text-lg font-semibold">Configurare GitHub Storage</h2>
-          <button id="closeGithubModal" class="text-gray-400 hover:text-gray-600">&times;</button>
+          <button id="closeGithubModal" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100">&times;</button>
         </div>
         <div class="space-y-4">
           <div>
-            <label for="githubToken" class="block text-sm font-medium text-gray-700">Token de acces personal</label>
-            <input id="githubToken" type="password" class="focusable mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
-            <p class="mt-1 text-xs text-gray-500">Necesită permisiuni de `repo` sau `contents:read/write`.</p>
+            <label for="githubToken" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Token de acces personal</label>
+            <input id="githubToken" type="password" class="focusable mt-1 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Necesită permisiuni de `repo` sau `contents:read/write`.</p>
           </div>
           <div>
-            <label for="githubRepo" class="block text-sm font-medium text-gray-700">Repository (format: `utilizator/repo`)</label>
-            <input id="githubRepo" type="text" class="focusable mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="ex: ion-popescu/pontaj-data" />
+            <label for="githubRepo" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Repository (format: `utilizator/repo`)</label>
+            <input id="githubRepo" type="text" class="focusable mt-1 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="ex: ion-popescu/pontaj-data" />
           </div>
           <div class="flex gap-2 pt-2">
             <button id="saveGithubConfig" class="focusable flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold">Salvează și închide</button>
             <button id="testConnection" class="focusable flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-semibold">Testează conexiunea</button>
           </div>
-          <div id="githubError" class="mt-2 text-sm text-red-600 hidden font-medium"></div>
+          <div id="githubError" class="mt-2 text-sm text-red-600 dark:text-red-500 hidden font-medium"></div>
         </div>
       </div>
     </div>
@@ -97,24 +108,24 @@
       <button id="syncData" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700">Sincronizează</button>
     </section>
 
-    <form id="timesheetForm" class="bg-white rounded-xl shadow-md ring-1 ring-gray-200 overflow-hidden">
+    <form id="timesheetForm" class="bg-white dark:bg-gray-800 rounded-xl shadow-md ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
       <div class="p-4 sm:p-6">
         <div class="max-w-sm">
-          <label for="workerSelect" class="block text-sm font-medium text-gray-700">Angajat (Cramă)</label>
-          <select id="workerSelect" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+          <label for="workerSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Angajat (Cramă)</label>
+          <select id="workerSelect" class="mt-1 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
             <option value="Prică Jenița">Prică Jenița</option>
             <option value="Neagu Marian">Neagu Marian</option>
             <option value="Banu Mitică">Banu Mitică</option>
             <option value="Prică Emilian">Prică Emilian</option>
             <option value="__custom">Alt nume…</option>
           </select>
-          <input id="workerName" type="text" class="mt-2 hidden w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="Introdu numele" />
+          <input id="workerName" type="text" class="mt-2 hidden w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" placeholder="Introdu numele" />
         </div>
       </div>
 
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
-          <thead class="bg-gray-50">
+          <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th scope="col" class="px-3 py-2 text-left font-semibold">✔</th>
               <th scope="col" class="px-3 py-2 text-left font-semibold">Data</th>
@@ -125,8 +136,8 @@
               <th scope="col" class="px-3 py-2 text-right font-semibold">Ore</th>
             </tr>
           </thead>
-          <tbody id="tableBody" class="divide-y divide-gray-200"></tbody>
-          <tfoot class="bg-gray-50">
+          <tbody id="tableBody" class="divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+          <tfoot class="bg-gray-50 dark:bg-gray-700">
             <tr>
               <td colspan="6" class="px-3 py-3 text-right font-semibold">Total general (ore):</td>
               <td class="px-3 py-3 text-right"><span id="grandTotal" class="font-bold">0.00</span></td>
@@ -145,29 +156,29 @@
         </div>
       </div>
     </form>
-     <p class="mt-3 text-xs text-gray-500 no-print">Hint: Dacă o tură trece de miezul nopții, bifează „Zi următoare” pe rândul respectiv.</p>
+     <p class="mt-3 text-xs text-gray-500 dark:text-gray-400 no-print">Hint: Dacă o tură trece de miezul nopții, bifează „Zi următoare” pe rândul respectiv.</p>
   </main>
 
-  <footer class="no-print border-t bg-white mt-8">
-    <div class="max-w-5xl mx-auto px-4 py-3 text-xs text-gray-500">© <span id="year"></span> – Fișă de Pontaj Cramă</div>
+  <footer class="no-print border-t bg-white dark:bg-gray-800 dark:border-gray-700 mt-8">
+    <div class="max-w-5xl mx-auto px-4 py-3 text-xs text-gray-500 dark:text-gray-400">© <span id="year"></span> – Fișă de Pontaj Cramă</div>
   </footer>
 
   <template id="rowTemplate">
     <tr>
       <td class="px-3 py-2 align-top"><input type="checkbox" aria-label="Selectează rând" class="focusable w-4 h-4" /></td>
-      <td class="px-3 py-2 align-top"><input type="date" class="focusable block w-40 rounded-md border-gray-300 px-2 py-1 border" /></td>
-      <td class="px-3 py-2 align-top"><input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 px-2 py-1 border" /></td>
+      <td class="px-3 py-2 align-top"><input type="date" class="focusable block w-40 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
+      <td class="px-3 py-2 align-top"><input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
       <td class="px-3 py-2 align-top">
         <div class="flex items-center gap-2">
-          <input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 px-2 py-1 border" />
-          <label class="inline-flex items-center gap-1 text-xs text-gray-600 select-none">
+          <input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
+          <label class="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 select-none">
             <input type="checkbox" class="next-day-toggle focusable">
             <span>Zi următoare</span>
           </label>
         </div>
       </td>
-      <td class="px-3 py-2 align-top"><input type="number" min="0" step="5" value="0" class="focusable block w-24 rounded-md border-gray-300 px-2 py-1 border" /></td>
-      <td class="px-3 py-2 align-top"><textarea rows="1" class="focusable block w-full rounded-md border-gray-300 px-2 py-1 border" placeholder="ex: cules, sortare..."></textarea></td>
+      <td class="px-3 py-2 align-top"><input type="number" min="0" step="5" value="0" class="focusable block w-24 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
+      <td class="px-3 py-2 align-top"><textarea rows="1" class="focusable block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" placeholder="ex: cules, sortare..."></textarea></td>
       <td class="px-3 py-2 align-top text-right"><output class="rowTotal font-medium">0.00</output></td>
     </tr>
   </template>
@@ -188,6 +199,7 @@
         saveGithubConfig: document.getElementById("saveGithubConfig"), testConnection: document.getElementById("testConnection"),
         statusIndicator: document.getElementById("statusIndicator"), statusText: document.getElementById("statusText"),
         githubError: document.getElementById("githubError"), year: document.getElementById("year"),
+        themeToggle: document.getElementById("themeToggle"),
       };
       
       let githubConfig = { token: '', repo: '' };
@@ -215,6 +227,10 @@
 
       function hideErrorInModal() {
         els.githubError.classList.add("hidden");
+      }
+
+      function updateThemeButton() {
+        els.themeToggle.textContent = document.documentElement.classList.contains("dark") ? "🌞" : "🌙";
       }
 
       // --- GitHub API Communication ---
@@ -345,6 +361,17 @@
 
       // --- UI Functions ---
       function addRowUI(data) {
+        if (!data || Object.keys(data).length === 0) {
+          const lastRow = els.tableBody.querySelector("tr:last-child");
+          if (lastRow) {
+            const lastInputs = lastRow.querySelectorAll("input");
+            data = {
+              date: lastInputs[1]?.value || "",
+              start: lastInputs[3]?.value || ""
+            };
+          }
+        }
+
         const node = els.rowTmpl.content.cloneNode(true);
         const [chk, date, start, end, breakMin, notes, out] = node.querySelectorAll("input, textarea, output");
         const nextDay = node.querySelector("input.next-day-toggle");
@@ -364,6 +391,8 @@
 
         [date, start, end, breakMin, notes, nextDay].forEach(el => el && el.addEventListener("input", recalc));
         recalc();
+        const tr = node.querySelector("tr");
+        tr.classList.add("fade-in");
         els.tableBody.appendChild(node);
       }
       
@@ -418,6 +447,13 @@
         els.testConnection.addEventListener("click", testGitHubConnection);
 
         els.exportCSV.addEventListener("click", () => { /* Add export logic here if needed */ });
+
+        els.themeToggle.addEventListener("click", () => {
+          document.documentElement.classList.toggle("dark");
+          const theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
+          localStorage.setItem("theme", theme);
+          updateThemeButton();
+        });
       }
 
       async function testGitHubConnection() {
@@ -456,6 +492,7 @@
         // Setup UI and load data
         els.workerSelect.value = WORKERS[0];
         setupEventListeners();
+        updateThemeButton();
         
         if (githubConfig.token && githubConfig.repo) {
             testGitHubConnection();
