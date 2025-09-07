@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { program } = require('commander');
 
 function parseTime(str) {
   const [h, m] = str.split(':').map(Number);
@@ -58,16 +59,15 @@ function formatReport(rep) {
 }
 
 if (require.main === module) {
-  const args = process.argv.slice(2);
-  const options = {};
-  for (let i = 0; i < args.length; i++) {
-    if (args[i].startsWith('--')) {
-      options[args[i].slice(2)] = args[i + 1];
-      i++;
-    }
-  }
-  const dataDir = options.dir || path.join(__dirname, 'data');
-  const rep = generateReport(dataDir, options.from, options.to);
+  program
+    .requiredOption('--from <date>', 'start date (YYYY-MM-DD)')
+    .requiredOption('--to <date>', 'end date (YYYY-MM-DD)')
+    .option('--dir <path>', 'directory with timesheets', path.join(__dirname, 'data'));
+
+  program.parse(process.argv);
+
+  const { dir, from, to } = program.opts();
+  const rep = generateReport(dir, from, to);
   console.log(formatReport(rep));
 }
 
