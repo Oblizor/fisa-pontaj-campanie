@@ -1,0 +1,16 @@
+{
+  "name": "fisa-pontaj-campanie",
+  "version": "1.0.0",
+  "description": "Timesheet tracker for campaign",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "jest": "^30.1.3"
+  }
+}
