@@ -397,9 +397,8 @@
           debouncedSave();
         };
 
-        [date, start, end, breakMin, notes, nextDay].forEach(el => el && el.addEventListener("input", recalc));
-        recalc();
         const tr = node.querySelector("tr");
+        [date, start, end, breakMin, notes, nextDay].forEach(el => el && el.addEventListener("input", recalc));
 
         delBtn && delBtn.addEventListener("click", () => {
           tr.remove();
@@ -423,6 +422,7 @@
 
         tr.classList.add("fade-in");
         els.tableBody.appendChild(node);
+        recalc();
       }
       
       const deleteSelectedRows = () => {
