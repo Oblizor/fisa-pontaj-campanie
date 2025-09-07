@@ -11,10 +11,16 @@ npm test
 
 ## Generating Activity Reports
 
-Use the `report.js` script to aggregate hours for all employees over a period.
+Use the `report.js` script to aggregate hours for all employees over a period. The `--from` and `--to` options are required; `--dir` defaults to the bundled `data` folder.
 
 ```bash
 node report.js --from 2025-09-01 --to 2025-09-30
 ```
 
-Adjust the `--from` and `--to` dates to cover weekly, monthly or custom ranges. The script scans the `data` folder and prints hours per day for each worker.
+Run `--help` to see all available options:
+
+```bash
+node report.js --help
+```
+
+Adjust the date range to cover weekly, monthly, or custom spans. The script scans the chosen directory and prints hours per day for each worker.
