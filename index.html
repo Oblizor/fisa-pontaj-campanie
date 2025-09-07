@@ -11,6 +11,8 @@
   <title>Fișă de Pontaj – Cramă (GitHub Storage)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
     body { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial; }
 
@@ -166,7 +168,7 @@
   <template id="rowTemplate">
     <tr>
       <td class="px-3 py-2 align-top"><input type="checkbox" aria-label="Selectează rând" class="focusable w-4 h-4" /></td>
-      <td class="px-3 py-2 align-top"><input type="date" class="focusable block w-40 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
+      <td class="px-3 py-2 align-top"><input class="focusable block w-40 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
       <td class="px-3 py-2 align-top"><input type="time" step="60" class="focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" /></td>
       <td class="px-3 py-2 align-top">
         <div class="flex items-center gap-2">
@@ -376,8 +378,15 @@
         const [chk, date, start, end, breakMin, notes, out] = node.querySelectorAll("input, textarea, output");
         const nextDay = node.querySelector("input.next-day-toggle");
 
+        flatpickr(date, {
+          dateFormat: "Y-m-d",
+          defaultDate: data && data.date ? data.date : null,
+          minDate: new Date(new Date().getFullYear(), 0, 1),
+          maxDate: new Date(new Date().getFullYear(), 11, 31)
+        });
+
         if (data) {
-          date.value = data.date || ""; start.value = data.start || ""; end.value = data.end || "";
+          start.value = data.start || ""; end.value = data.end || "";
           breakMin.value = data.breakMin ?? 0; notes.value = data.notes || "";
           if (nextDay && typeof data.nextDay === "boolean") nextDay.checked = data.nextDay;
         }
