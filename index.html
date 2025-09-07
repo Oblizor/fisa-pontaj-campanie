@@ -395,11 +395,17 @@
           }
         }
 
-        const node = els.rowTmpl.content.cloneNode(true);
-        const [chk, date, start, end, breakMin, notes, out] = node.querySelectorAll("input, textarea, output");
-        const nextDay = node.querySelector("input.next-day-toggle");
-        const startStopBtn = node.querySelector("button.start-stop");
-        const currentTime = node.querySelector(".current-time");
+          const node = els.rowTmpl.content.cloneNode(true);
+          const chk = node.querySelector("input.row-select");
+          const date = node.querySelector(".row-date");
+          const start = node.querySelector(".row-start");
+          const end = node.querySelector(".row-end");
+          const breakMin = node.querySelector(".row-break");
+          const notes = node.querySelector(".row-notes");
+          const out = node.querySelector("output.rowTotal");
+          const nextDay = node.querySelector(".next-day-toggle");
+          const startStopBtn = node.querySelector("button.start-stop");
+          // removed currentTime element since it doesn't exist in template
 
         flatpickr(date, {
           dateFormat: "Y-m-d",
@@ -421,40 +427,37 @@
           debouncedSave();
         };
 
-        [date, start, end, breakMin, notes, nextDay].forEach(el => el && el.addEventListener("input", recalc));
+          [date, start, end, breakMin, notes, nextDay].forEach(el => el && el.addEventListener("input", recalc));
 
         let timer = null;
         startStopBtn.addEventListener("click", () => {
-          if (timer) {
-            clearInterval(timer);
-            timer = null;
-            const now = new Date();
-            const t = now.toTimeString().slice(0,5);
-            end.value = t;
-            currentTime.textContent = t;
-            startStopBtn.textContent = "Start";
-            startStopBtn.classList.remove("bg-red-600", "hover:bg-red-700");
-            startStopBtn.classList.add("bg-green-600", "hover:bg-green-700");
-            recalc();
-          } else {
-            const now = new Date();
-            const t = now.toTimeString().slice(0,5);
-            start.value = t;
-            end.value = t;
-            currentTime.textContent = t;
-            startStopBtn.textContent = "Stop";
-            startStopBtn.classList.remove("bg-green-600", "hover:bg-green-700");
-            startStopBtn.classList.add("bg-red-600", "hover:bg-red-700");
-            recalc();
-            timer = setInterval(() => {
+            if (timer) {
+              clearInterval(timer);
+              timer = null;
               const now = new Date();
-              const tt = now.toTimeString().slice(0,5);
-              currentTime.textContent = tt;
-              end.value = tt;
+              const t = now.toTimeString().slice(0,5);
+              end.value = t;
+              startStopBtn.textContent = "Start";
+              startStopBtn.classList.remove("bg-red-600", "hover:bg-red-700");
+              startStopBtn.classList.add("bg-green-600", "hover:bg-green-700");
               recalc();
-            }, 1000);
-          }
-        });
+            } else {
+              const now = new Date();
+              const t = now.toTimeString().slice(0,5);
+              start.value = t;
+              end.value = t;
+              startStopBtn.textContent = "Stop";
+              startStopBtn.classList.remove("bg-green-600", "hover:bg-green-700");
+              startStopBtn.classList.add("bg-red-600", "hover:bg-red-700");
+              recalc();
+              timer = setInterval(() => {
+                const now = new Date();
+                const tt = now.toTimeString().slice(0,5);
+                end.value = tt;
+                recalc();
+              }, 1000);
+            }
+          });
 
         recalc();
         const tr = node.querySelector("tr");
