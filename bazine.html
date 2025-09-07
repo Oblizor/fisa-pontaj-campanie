@@ -3,10 +3,233 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bazine</title>
+  <title>Gestionare Vin</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 text-gray-800">
-  <h1 class="text-center text-2xl mt-8">Bazine</h1>
+<body class="bg-gray-100 text-gray-800 p-4">
+  <h1 class="text-2xl mb-4">Gestionare Vin</h1>
+
+  <!-- Bazin Section -->
+  <section class="mb-8">
+    <h2 class="text-xl mb-2">Bazine</h2>
+    <form id="bazinForm" class="flex flex-wrap gap-2 mb-4">
+      <input id="bazinId" class="border p-2" placeholder="ID" required />
+      <input id="bazinCap" type="number" class="border p-2" placeholder="Capacitate" required />
+      <input id="bazinVol" type="number" class="border p-2" placeholder="Volum curent" required />
+      <label class="flex items-center gap-1"><input id="bazinManta" type="checkbox" />Manta răcire</label>
+      <label class="flex items-center gap-1"><input id="bazinDeb" type="checkbox" />Deburbare</label>
+      <label class="flex items-center gap-1"><input id="bazinRosu" type="checkbox" />Fermentație roșu</label>
+      <label class="flex items-center gap-1"><input id="bazinInt" type="checkbox" />Interior</label>
+      <label class="flex items-center gap-1"><input id="bazinExt" type="checkbox" />Exterior</label>
+      <button class="bg-blue-600 text-white px-4 py-2">Adaugă</button>
+    </form>
+    <table class="min-w-full bg-white">
+      <thead><tr class="border-b"><th class="p-2 text-left">ID</th><th class="p-2 text-left">Capacitate</th><th class="p-2 text-left">Volum</th><th class="p-2 text-left">Manta răcire</th><th class="p-2 text-left">Deburbare</th><th class="p-2 text-left">Fermentație roșu</th><th class="p-2 text-left">Interior</th><th class="p-2 text-left">Exterior</th></tr></thead>
+      <tbody id="bazineBody"></tbody>
+    </table>
+  </section>
+
+  <!-- Lot Section -->
+  <section class="mb-8">
+    <h2 class="text-xl mb-2">Loturi</h2>
+    <form id="lotForm" class="flex flex-wrap gap-2 mb-4">
+      <input id="lotSoi" class="border p-2" placeholder="Soi" required />
+      <input id="lotAn" type="number" class="border p-2" placeholder="An" required />
+      <input id="lotCant" type="number" class="border p-2" placeholder="Cantitate" required />
+      <button class="bg-blue-600 text-white px-4 py-2">Adaugă</button>
+    </form>
+    <table class="min-w-full bg-white">
+      <thead><tr class="border-b"><th class="p-2 text-left">ID</th><th class="p-2 text-left">Soi</th><th class="p-2 text-left">An</th><th class="p-2 text-left">Cantitate</th></tr></thead>
+      <tbody id="loturiBody"></tbody>
+    </table>
+  </section>
+
+  <!-- Operation Section -->
+  <section class="mb-8">
+    <h2 class="text-xl mb-2">Operații</h2>
+    <form id="opForm" class="flex flex-wrap gap-2 mb-4">
+      <select id="opTip" class="border p-2" required>
+        <option value="umplere">Umplere</option>
+        <option value="transvazare">Transvazare</option>
+        <option value="tratament">Tratament</option>
+      </select>
+      <input id="opData" type="date" class="border p-2" required />
+      <input id="opVol" type="number" class="border p-2" placeholder="Volum" required />
+      <select id="opLot" class="border p-2"></select>
+      <select id="opBazinSursa" class="border p-2"></select>
+      <select id="opBazinDest" class="border p-2"></select>
+      <input id="opTratament" class="border p-2" placeholder="Tip tratament" />
+      <button class="bg-blue-600 text-white px-4 py-2">Înregistrează</button>
+    </form>
+  </section>
+
+  <!-- History Bazin -->
+  <section class="mb-8">
+    <h2 class="text-xl mb-2">Istoric Bazin</h2>
+    <select id="histBazin" class="border p-2 mb-2"></select>
+    <table class="min-w-full bg-white">
+      <thead><tr class="border-b"><th class="p-2 text-left">Data</th><th class="p-2 text-left">Tip</th><th class="p-2 text-left">Volum</th><th class="p-2 text-left">Lot</th><th class="p-2 text-left">Sursă</th><th class="p-2 text-left">Dest</th></tr></thead>
+      <tbody id="histBazinBody"></tbody>
+    </table>
+  </section>
+
+  <!-- History Lot -->
+  <section class="mb-8">
+    <h2 class="text-xl mb-2">Istoric Lot</h2>
+    <select id="histLot" class="border p-2 mb-2"></select>
+    <table class="min-w-full bg-white">
+      <thead><tr class="border-b"><th class="p-2 text-left">Data</th><th class="p-2 text-left">Tip</th><th class="p-2 text-left">Volum</th><th class="p-2 text-left">Bazin Sursă</th><th class="p-2 text-left">Bazin Dest</th><th class="p-2 text-left">Tratament</th></tr></thead>
+      <tbody id="histLotBody"></tbody>
+    </table>
+  </section>
+
+<script>
+const STORAGE_KEYS = { bazine:'wine-bazine', loturi:'wine-loturi', operatii:'wine-operatii' };
+let bazine = JSON.parse(localStorage.getItem(STORAGE_KEYS.bazine) || '[]');
+let loturi = JSON.parse(localStorage.getItem(STORAGE_KEYS.loturi) || '[]');
+let operatii = JSON.parse(localStorage.getItem(STORAGE_KEYS.operatii) || '[]');
+
+function save() {
+  localStorage.setItem(STORAGE_KEYS.bazine, JSON.stringify(bazine));
+  localStorage.setItem(STORAGE_KEYS.loturi, JSON.stringify(loturi));
+  localStorage.setItem(STORAGE_KEYS.operatii, JSON.stringify(operatii));
+}
+
+async function loadInitial() {
+  if (bazine.length === 0) {
+    try {
+      const res = await fetch('data/bazine.json');
+      bazine = await res.json();
+      save();
+    } catch (err) {
+      console.error('Nu s-au putut încărca bazinele inițiale', err);
+    }
+  }
+  renderBazine();
+  updateDropdowns();
+}
+
+function renderBazine() {
+  const body = document.getElementById('bazineBody');
+  body.innerHTML = '';
+  for (const b of bazine) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class='border p-2'>${b.id}</td><td class='border p-2'>${b.capacitate}</td><td class='border p-2'>${b.volumCurent}</td><td class='border p-2'>${b.mantaRacire ? 'da' : 'nu'}</td><td class='border p-2'>${b.deburbare ? 'da' : 'nu'}</td><td class='border p-2'>${b.fermentatieRosu ? 'da' : 'nu'}</td><td class='border p-2'>${b.interior ? 'da' : 'nu'}</td><td class='border p-2'>${b.exterior ? 'da' : 'nu'}</td>`;
+    body.appendChild(tr);
+  }
+}
+
+function renderLoturi() {
+  const body = document.getElementById('loturiBody');
+  body.innerHTML = '';
+  for (const l of loturi) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class='border p-2'>${l.id}</td><td class='border p-2'>${l.soi}</td><td class='border p-2'>${l.an}</td><td class='border p-2'>${l.cantitate}</td>`;
+    body.appendChild(tr);
+  }
+}
+
+function updateDropdowns() {
+  const bazinSelects = [document.getElementById('opBazinSursa'), document.getElementById('opBazinDest'), document.getElementById('histBazin')];
+  for (const sel of bazinSelects) {
+    sel.innerHTML = '<option value="">-</option>' + bazine.map(b => `<option value="${b.id}">${b.id}</option>`).join('');
+  }
+  const lotSelects = [document.getElementById('opLot'), document.getElementById('histLot')];
+  for (const sel of lotSelects) {
+    sel.innerHTML = '<option value="">-</option>' + loturi.map(l => `<option value="${l.id}">${l.id}</option>`).join('');
+  }
+}
+
+function showHistoryBazin(id) {
+  const body = document.getElementById('histBazinBody');
+  body.innerHTML = '';
+  if (!id) return;
+  const ops = operatii.filter(o => o.bazinSursa === id || o.bazinDest === id);
+  for (const o of ops) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class='border p-2'>${o.data}</td><td class='border p-2'>${o.tip}${o.tratament? ' - '+o.tratament:''}</td><td class='border p-2'>${o.volum}</td><td class='border p-2'>${o.lotId||''}</td><td class='border p-2'>${o.bazinSursa||''}</td><td class='border p-2'>${o.bazinDest||''}</td>`;
+    body.appendChild(tr);
+  }
+}
+
+document.getElementById('histBazin').addEventListener('change', e => showHistoryBazin(e.target.value));
+
+function showHistoryLot(id) {
+  const body = document.getElementById('histLotBody');
+  body.innerHTML = '';
+  if (!id) return;
+  const ops = operatii.filter(o => o.lotId === id);
+  for (const o of ops) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class='border p-2'>${o.data}</td><td class='border p-2'>${o.tip}</td><td class='border p-2'>${o.volum}</td><td class='border p-2'>${o.bazinSursa||''}</td><td class='border p-2'>${o.bazinDest||''}</td><td class='border p-2'>${o.tratament||''}</td>`;
+    body.appendChild(tr);
+  }
+}
+
+document.getElementById('histLot').addEventListener('change', e => showHistoryLot(e.target.value));
+
+// Add Bazin
+document.getElementById('bazinForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const id = bazinId.value.trim();
+  const capacitate = Number(bazinCap.value);
+  const volumCurent = Number(bazinVol.value);
+  const mantaRacire = bazinManta.checked;
+  const deburbare = bazinDeb.checked;
+  const fermentatieRosu = bazinRosu.checked;
+  const interior = bazinInt.checked;
+  const exterior = bazinExt.checked;
+  bazine.push({ id, capacitate, volumCurent, mantaRacire, deburbare, fermentatieRosu, interior, exterior });
+  e.target.reset();
+  save();
+  renderBazine();
+  updateDropdowns();
+});
+
+// Add Lot
+ document.getElementById('lotForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const soi = lotSoi.value.trim();
+  const an = lotAn.value.trim();
+  const cantitate = Number(lotCant.value);
+  const id = `${soi}-${an}-${Date.now()}`;
+  loturi.push({ id, soi, an, cantitate });
+  e.target.reset();
+  save();
+  renderLoturi();
+  updateDropdowns();
+});
+
+// Add Operation
+ document.getElementById('opForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const tip = opTip.value;
+  const data = opData.value;
+  const volum = Number(opVol.value);
+  const lotId = opLot.value || null;
+  const bazinSursa = opBazinSursa.value || null;
+  const bazinDest = opBazinDest.value || null;
+  const tratament = opTratament.value || null;
+  const op = { id: Date.now(), tip, data, volum, lotId, bazinSursa, bazinDest, tratament };
+  operatii.push(op);
+  if (tip === 'umplere') {
+    const dest = bazine.find(b => b.id === bazinDest);
+    if (dest) dest.volumCurent += volum;
+  } else if (tip === 'transvazare') {
+    const sursa = bazine.find(b => b.id === bazinSursa);
+    const dest = bazine.find(b => b.id === bazinDest);
+    if (sursa) sursa.volumCurent -= volum;
+    if (dest) dest.volumCurent += volum;
+  }
+  save();
+  renderBazine();
+  showHistoryBazin(histBazin.value);
+  showHistoryLot(histLot.value);
+  e.target.reset();
+});
+
+renderLoturi();
+loadInitial();
+</script>
 </body>
 </html>
