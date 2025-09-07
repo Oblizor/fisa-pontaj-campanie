@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { program } = require('commander');
 
 function parseTime(str) {
   const [h, m] = str.split(':').map(Number);
@@ -30,7 +31,7 @@ function generateReport(dataDir, fromDate, toDate) {
   for (const file of files) {
     const fullPath = path.join(dataDir, file);
     const json = loadJson(fullPath);
-    const worker = json.meta?.worker || file;
+    const worker = json.meta?.worker || path.basename(file, '.json').replace(/^pontaj_/, '');
     for (const row of json.rows || []) {
       if (!row.date) continue;
       const dateObj = new Date(row.date);
@@ -62,16 +63,15 @@ function formatReport(rep) {
 }
 
 if (require.main === module) {
-  const args = process.argv.slice(2);
-  const options = {};
-  for (let i = 0; i < args.length; i++) {
-    if (args[i].startsWith('--')) {
-      options[args[i].slice(2)] = args[i + 1];
-      i++;
-    }
-  }
-  const dataDir = options.dir || path.join(__dirname, 'data');
-  const rep = generateReport(dataDir, options.from, options.to);
+  program
+    .requiredOption('--from <date>', 'start date in YYYY-MM-DD')
+    .requiredOption('--to <date>', 'end date in YYYY-MM-DD')
+    .option('--dir <path>', 'data directory', path.join(__dirname, 'data'));
+
+  program.parse();
+  const options = program.opts();
+
+  const rep = generateReport(options.dir, options.from, options.to);
   console.log(formatReport(rep));
 }
 

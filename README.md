@@ -19,3 +19,5 @@ node report.js --from 2025-09-01 --to 2025-09-30
 The script scans the `data` folder and prints hours per day for each worker. Adjust the `--from` and `--to` dates to cover weekly, monthly, or custom ranges. Use `--dir <path>` to analyze a different data directory.
 
 If no entries match the period, it outputs `No activity found for selected period.`
+
+Run `node report.js --help` to view all available options.

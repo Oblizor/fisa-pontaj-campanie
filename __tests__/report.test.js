@@ -33,3 +33,12 @@ test('formatReport warns when no activity', () => {
   const message = formatReport({});
   expect(message).toBe('No activity found for selected period.');
 });
+
+test('generateReport uses cleaned filename as worker name when meta missing', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pontaj-test-'));
+  const data = { rows: [{ date: '2025-09-01', start: '08:00', end: '10:00', breakMin: 0 }] };
+  fs.writeFileSync(path.join(tmpDir, 'pontaj_john-doe.json'), JSON.stringify(data));
+  const report = generateReport(tmpDir, '2025-09-01', '2025-09-30');
+  expect(report['john-doe']['2025-09-01']).toBeCloseTo(2);
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
