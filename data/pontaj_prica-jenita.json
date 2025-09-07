@@ -1,17 +1,17 @@
 {
   "meta": {
     "worker": "Prică Jenița",
-    "lastUpdated": "2025-09-07T11:44:41.994Z",
+    "lastUpdated": "2025-09-07T11:44:46.425Z",
     "version": "3.4"
   },
   "rows": [
     {
       "date": "2025-09-08",
-      "start": "",
-      "end": "",
+      "start": "14:44",
+      "end": "18:44",
       "nextDay": false,
       "breakMin": 0,
-      "notes": "0.00"
+      "notes": "4.00"
     }
   ]
 }
