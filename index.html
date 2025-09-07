@@ -364,11 +364,8 @@
         if (!data || Object.keys(data).length === 0) {
           const lastRow = els.tableBody.querySelector("tr:last-child");
           if (lastRow) {
-            const lastInputs = lastRow.querySelectorAll("input");
-            data = {
-              date: lastInputs[1]?.value || "",
-              start: lastInputs[3]?.value || ""
-            };
+            const lastEnd = lastRow.querySelectorAll('input[type="time"]')[1]?.value || "";
+            data = { start: lastEnd };
           }
         }
 
