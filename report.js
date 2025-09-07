@@ -100,7 +100,7 @@ if (require.main === module) {
   if (formatted) {
     console.log(formatted);
   } else {
-    console.log('No activity.');
+    console.log('No activity found for selected period.');
   }
 }
 

@@ -62,7 +62,7 @@ test('CLI reports hours and shows no activity when appropriate', () => {
     );
 
     const noActivity = execFileSync('node', ['report.js', '--from', '2025-08-01', '--to', '2025-08-31', '--dir', tmpDir], { encoding: 'utf8' }).trim();
-    expect(noActivity).toBe('No activity.');
+    expect(noActivity).toBe('No activity found for selected period.');
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
