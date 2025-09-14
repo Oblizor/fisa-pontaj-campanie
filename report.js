@@ -62,7 +62,12 @@ function formatReport(rep) {
     out += `\n${worker}\n`;
     const dates = Object.keys(rep[worker]).sort();
     for (const d of dates) {
-      out += `  ${d}: ${rep[worker][d].toFixed(2)}h\n`;
+      const dateFmt = new Date(d).toLocaleDateString('ro-RO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).replace(/\./g, '/');
+      out += `  ${dateFmt}: ${rep[worker][d].toFixed(2)}h\n`;
     }
   }
   return out.trim();
