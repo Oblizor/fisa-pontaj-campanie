@@ -53,7 +53,6 @@ export function formatReport(rep) {
         month: '2-digit',
         year: 'numeric'
       }).replace(/\./g, '/');
-      out += `  ${dateFmt}: ${formatHM(rep[worker][d])}\n`;
     }
   }
   return out.trim();

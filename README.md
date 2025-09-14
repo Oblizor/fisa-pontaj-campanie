@@ -30,19 +30,6 @@ Adjust the date range to cover weekly, monthly, or custom spans. The script scan
 ```
 Alice
   01/09/2025: 7.50h
-
-bob
-  02/09/2025: 4.00h
-```
-
-### Example output with `--format hours-minutes`
-
-```
-Alice
-  01/09/2025: 7 h 30 m
-
-bob
-  02/09/2025: 4 h 00 m
 ```
 
 For date ranges without any activity, the script prints:

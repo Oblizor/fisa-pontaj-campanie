@@ -89,11 +89,6 @@ function formatReport(rep, format = 'decimal') {
         month: '2-digit',
         year: 'numeric'
       }).replace(/\./g, '/');
-
-      const hours = rep[worker][d];
-      const formattedHours = format === 'hours-minutes' ? formatHM(hours) : `${hours.toFixed(2)}h`;
-
-      out += `  ${dateFmt}: ${formattedHours}\n`;
     }
   }
   return out.trim();

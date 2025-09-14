@@ -1,22 +1,166 @@
 {
   "meta": {
     "worker": "Neagu Marian",
-    "lastUpdated": "2025-09-14T12:54:56.355Z",
+    "lastUpdated": "2025-09-14T13:57:33.571Z",
     "version": "3.4"
   },
   "rows": [
     {
-      "date": "2025-09-07",
-      "start": "13:00",
-      "end": "15:00",
+      "date": "2025-09-03",
+      "start": "09:00",
+      "end": "12:00",
       "nextDay": false,
       "breakMin": 0,
       "notes": ""
     },
     {
-      "date": "",
+      "date": "2025-09-03",
+      "start": "16:00",
+      "end": "03:00",
+      "nextDay": true,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-04",
+      "start": "11:00",
+      "end": "13:00",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-04",
+      "start": "16:00",
+      "end": "00:40",
+      "nextDay": true,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-05",
+      "start": "10:45",
+      "end": "13:00",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-05",
+      "start": "16:00",
+      "end": "00:00",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-06",
+      "start": "10:30",
+      "end": "16:30",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-06",
+      "start": "14:10",
+      "end": "20:00",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-07",
+      "start": "10:00",
+      "end": "12:00",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-08",
+      "start": "09:50",
+      "end": "12:50",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-08",
+      "start": "14:00",
+      "end": "19:30",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-09",
+      "start": "08:15",
+      "end": "10:25",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-09",
       "start": "15:00",
-      "end": "",
+      "end": "00:00",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-10",
+      "start": "10:30",
+      "end": "13:30",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-10",
+      "start": "15:30",
+      "end": "23:30",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-11",
+      "start": "14:00",
+      "end": "00:00",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-12",
+      "start": "10:00",
+      "end": "13:00",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-12",
+      "start": "14:00",
+      "end": "19:30",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-13",
+      "start": "10:00",
+      "end": "12:30",
+      "nextDay": false,
+      "breakMin": 0,
+      "notes": ""
+    },
+    {
+      "date": "2025-09-13",
+      "start": "13:30",
+      "end": "22:30",
       "nextDay": false,
       "breakMin": 0,
       "notes": ""

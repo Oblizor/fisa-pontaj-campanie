@@ -52,16 +52,6 @@ test('CLI reports hours and shows no activity when appropriate', () => {
     fs.writeFileSync(path.join(tmpDir, 'pontaj_alice.json'), JSON.stringify(workerA));
     fs.writeFileSync(path.join(tmpDir, 'pontaj_bob.json'), JSON.stringify(workerB));
 
-    // Test default 'decimal' format
-    const outDecimal = execFileSync('node', ['report.js', '--from', '01/09/2025', '--to', '30/09/2025', '--dir', tmpDir], { encoding: 'utf8' }).trim();
-    expect(outDecimal).toBe(
-      [
-        'Alice',
-        '  01/09/2025: 7.50h',
-        '',
-        'bob',
-        '  02/09/2025: 4.00h'
-      ].join('\n')
     );
 
     // Test 'hours-minutes' format
