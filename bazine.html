@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestionare Vin</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4">
   <h1 class="text-2xl mb-4">Gestionare Vin</h1>
@@ -85,6 +87,20 @@ let bazine = JSON.parse(localStorage.getItem(STORAGE_KEYS.bazine) || '[]');
 let loturi = JSON.parse(localStorage.getItem(STORAGE_KEYS.loturi) || '[]');
 let operatii = JSON.parse(localStorage.getItem(STORAGE_KEYS.operatii) || '[]');
 
+function formatDateRO(str) {
+  return new Date(str).toLocaleDateString('ro-RO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).replace(/\./g, '/');
+}
+
+flatpickr(document.getElementById('opData'), {
+  dateFormat: 'Y-m-d',
+  altInput: true,
+  altFormat: 'd/m/Y'
+});
+
 function save() {
   localStorage.setItem(STORAGE_KEYS.bazine, JSON.stringify(bazine));
   localStorage.setItem(STORAGE_KEYS.loturi, JSON.stringify(loturi));
@@ -129,7 +145,7 @@ function showHistoryBazin(id) {
   const ops = operatii.filter(o => o.bazinSursa === id || o.bazinDest === id);
   for (const o of ops) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class='border p-2'>${o.data}</td><td class='border p-2'>${o.tip}${o.tratament? ' - '+o.tratament:''}</td><td class='border p-2'>${o.volum}</td><td class='border p-2'>${o.lotId||''}</td><td class='border p-2'>${o.bazinSursa||''}</td><td class='border p-2'>${o.bazinDest||''}</td>`;
+    tr.innerHTML = `<td class='border p-2'>${formatDateRO(o.data)}</td><td class='border p-2'>${o.tip}${o.tratament? ' - '+o.tratament:''}</td><td class='border p-2'>${o.volum}</td><td class='border p-2'>${o.lotId||''}</td><td class='border p-2'>${o.bazinSursa||''}</td><td class='border p-2'>${o.bazinDest||''}</td>`;
     body.appendChild(tr);
   }
 }
@@ -143,7 +159,7 @@ function showHistoryLot(id) {
   const ops = operatii.filter(o => o.lotId === id);
   for (const o of ops) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class='border p-2'>${o.data}</td><td class='border p-2'>${o.tip}</td><td class='border p-2'>${o.volum}</td><td class='border p-2'>${o.bazinSursa||''}</td><td class='border p-2'>${o.bazinDest||''}</td><td class='border p-2'>${o.tratament||''}</td>`;
+    tr.innerHTML = `<td class='border p-2'>${formatDateRO(o.data)}</td><td class='border p-2'>${o.tip}</td><td class='border p-2'>${o.volum}</td><td class='border p-2'>${o.bazinSursa||''}</td><td class='border p-2'>${o.bazinDest||''}</td><td class='border p-2'>${o.tratament||''}</td>`;
     body.appendChild(tr);
   }
 }
