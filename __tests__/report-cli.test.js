@@ -6,7 +6,7 @@ const os = require('os');
 describe('report CLI argument validation', () => {
   test('malformed dates cause errors', () => {
     try {
-      execFileSync('node', ['report.js', '--from', 'bad', '--to', '2025-01-01'], { encoding: 'utf8' });
+      execFileSync('node', ['report.js', '--from', 'bad', '--to', '01/01/2025'], { encoding: 'utf8' });
       throw new Error('Expected command to fail');
     } catch (err) {
       expect(err.status).not.toBe(0);
@@ -14,7 +14,7 @@ describe('report CLI argument validation', () => {
     }
 
     try {
-      execFileSync('node', ['report.js', '--from', '2025-01-01', '--to', 'bad'], { encoding: 'utf8' });
+      execFileSync('node', ['report.js', '--from', '01/01/2025', '--to', 'bad'], { encoding: 'utf8' });
       throw new Error('Expected command to fail');
     } catch (err) {
       expect(err.status).not.toBe(0);
@@ -24,7 +24,7 @@ describe('report CLI argument validation', () => {
 
   test('reversed date range causes error', () => {
     try {
-      execFileSync('node', ['report.js', '--from', '2025-02-01', '--to', '2025-01-01'], { encoding: 'utf8' });
+      execFileSync('node', ['report.js', '--from', '02/01/2025', '--to', '01/01/2025'], { encoding: 'utf8' });
       throw new Error('Expected command to fail');
     } catch (err) {
       expect(err.status).not.toBe(0);
@@ -36,7 +36,7 @@ describe('report CLI argument validation', () => {
     const missingDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pontaj-missing-cli-'));
     fs.rmSync(missingDir, { recursive: true, force: true });
     try {
-      execFileSync('node', ['report.js', '--from', '2025-09-01', '--to', '2025-09-30', '--dir', missingDir], {
+      execFileSync('node', ['report.js', '--from', '01/09/2025', '--to', '30/09/2025', '--dir', missingDir], {
         encoding: 'utf8'
       });
       throw new Error('Expected command to fail');

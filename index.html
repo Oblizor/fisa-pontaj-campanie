@@ -160,7 +160,7 @@
           <tfoot class="bg-gray-50 dark:bg-gray-700">
             <tr>
               <td colspan="6" class="px-3 py-3 text-right font-semibold">Total general (ore):</td>
-              <td class="px-3 py-3 text-right"><span id="grandTotal" class="font-bold">0.00</span></td>
+              <td class="px-3 py-3 text-right"><span id="grandTotal" class="font-bold">0 h 00 m</span></td>
             </tr>
           </tfoot>
         </table>
@@ -213,7 +213,7 @@
       <textarea rows="1" class="row-notes focusable block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" placeholder="ex: cules, sortare..."></textarea>
     </td>
     <td class="px-3 py-2 align-top text-right">
-      <output class="rowTotal font-medium">0.00</output>
+      <output class="rowTotal font-medium">0 h 00 m</output>
     </td>
   </tr>
 </template>
@@ -368,10 +368,17 @@
         return Math.max(0, endMins - startMins - (parseInt(breakMin, 10) || 0)) / 60;
       };
 
+      const formatHM = hours => {
+        const totalMins = Math.round(hours * 60);
+        const h = Math.floor(totalMins / 60);
+        const m = totalMins % 60;
+        return `${h} h ${m.toString().padStart(2, '0')} m`;
+      };
+
       const computeGrand = () => {
         let total = 0;
-        els.tableBody.querySelectorAll("tr").forEach(tr => total += parseFloat(tr.querySelector("output.rowTotal").textContent || 0));
-        els.grandTotal.textContent = total.toFixed(2);
+        els.tableBody.querySelectorAll("output.rowTotal").forEach(out => total += parseFloat(out.dataset.hours || 0));
+        els.grandTotal.textContent = formatHM(total);
       };
 
     const getTableData = () => {
@@ -484,7 +491,8 @@
 
         const recalc = () => {
           const dur = computeDuration(start.value, end.value, breakMin.value, nextDay && nextDay.checked);
-          out.textContent = dur.toFixed(2);
+          out.textContent = formatHM(dur);
+          out.dataset.hours = dur;
           computeGrand();
           debouncedSave();
         };

@@ -3,7 +3,7 @@ const path = require('path');
 const { program } = require('commander');
 
 function parseTime(str) {
-  const [h, m] = str.split(':').map(Number);
+  const [h, m] = (str || '0:0').split(':').map(Number);
   return h * 60 + m;
 }
 
@@ -16,6 +16,23 @@ function computeHours(row) {
   }
   const breakMin = row.breakMin || 0;
   return Math.max(0, (end - start - breakMin) / 60);
+}
+
+function formatHM(hours) {
+  const totalMins = Math.round(hours * 60);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return `${h} h ${m.toString().padStart(2, '0')} m`;
+}
+
+function parseDateInput(str) {
+  if (typeof str !== 'string') return new Date(NaN);
+  const ro = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (ro) {
+    const [, day, month, year] = ro;
+    return new Date(`${year}-${month}-${day}`);
+  }
+  return new Date(str);
 }
 
 function loadJson(file) {
@@ -38,15 +55,18 @@ function generateReport(dataDir, fromDate, toDate) {
     }
     throw err;
   }
+
   for (const file of files) {
     const fullPath = path.join(dataDir, file);
     const json = loadJson(fullPath);
     const worker = json.meta?.worker || path.basename(file, '.json').replace(/^pontaj_/, '');
+
     for (const row of json.rows || []) {
       if (!row.date) continue;
       const dateObj = new Date(row.date);
-      if (from && dateObj < from) continue;
-      if (to && dateObj > to) continue;
+      if ((from && dateObj < from) || (to && dateObj > to)) {
+        continue;
+      }
       const dateStr = row.date;
       const hours = computeHours(row);
       if (!report[worker]) report[worker] = {};
@@ -56,9 +76,11 @@ function generateReport(dataDir, fromDate, toDate) {
   return report;
 }
 
-function formatReport(rep) {
+function formatReport(rep, format = 'decimal') {
   let out = '';
-  for (const worker of Object.keys(rep).sort()) {
+  const workers = Object.keys(rep).sort();
+
+  for (const worker of workers) {
     out += `\n${worker}\n`;
     const dates = Object.keys(rep[worker]).sort();
     for (const d of dates) {
@@ -67,7 +89,6 @@ function formatReport(rep) {
         month: '2-digit',
         year: 'numeric'
       }).replace(/\./g, '/');
-      out += `  ${dateFmt}: ${rep[worker][d].toFixed(2)}h\n`;
     }
   }
   return out.trim();
@@ -75,21 +96,27 @@ function formatReport(rep) {
 
 if (require.main === module) {
   program
-    .requiredOption('--from <date>', 'start date (YYYY-MM-DD)')
-    .requiredOption('--to <date>', 'end date (YYYY-MM-DD)')
-    .option('--dir <path>', 'directory with timesheets', path.join(__dirname, 'data'));
+    .requiredOption('--from <date>', 'start date (DD/MM/YYYY or YYYY-MM-DD)')
+    .requiredOption('--to <date>', 'end date (DD/MM/YYYY or YYYY-MM-DD)')
+    .option('--dir <path>', 'directory with timesheets', path.join(__dirname, 'data'))
+    .option('--format <type>', 'output format (decimal or hours-minutes)', 'decimal');
 
   program.parse(process.argv);
 
-  const { dir, from, to } = program.opts();
+  const { dir, from, to, format } = program.opts();
 
-  const fromDate = new Date(from);
+  if (format !== 'decimal' && format !== 'hours-minutes') {
+    console.error(`Invalid --format value: ${format}. Choose 'decimal' or 'hours-minutes'.`);
+    process.exit(1);
+  }
+
+  const fromDate = parseDateInput(from);
   if (isNaN(fromDate)) {
     console.error(`Invalid --from date: ${from}`);
     process.exit(1);
   }
 
-  const toDate = new Date(to);
+  const toDate = parseDateInput(to);
   if (isNaN(toDate)) {
     console.error(`Invalid --to date: ${to}`);
     process.exit(1);
@@ -100,13 +127,18 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const rep = generateReport(dir, fromDate, toDate);
-  const formatted = formatReport(rep);
-  if (formatted) {
-    console.log(formatted);
-  } else {
-    console.log('No activity found for selected period.');
+  try {
+    const rep = generateReport(dir, fromDate, toDate);
+    const formatted = formatReport(rep, format);
+    if (formatted) {
+      console.log(formatted);
+    } else {
+      console.log('No activity found for selected period.');
+    }
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
   }
 }
 
-module.exports = { generateReport, formatReport };
+module.exports = { generateReport, formatReport, computeHours, parseTime };

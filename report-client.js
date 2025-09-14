@@ -14,6 +14,13 @@ export function computeHours(row) {
   return Math.max(0, (end - start - breakMin) / 60);
 }
 
+function formatHM(hours) {
+  const totalMins = Math.round(hours * 60);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return `${h} h ${m.toString().padStart(2, '0')} m`;
+}
+
 export function generateReport(timesheets = [], fromDate, toDate) {
   const from = fromDate ? new Date(fromDate) : null;
   const to = toDate ? new Date(toDate) : null;
@@ -46,7 +53,6 @@ export function formatReport(rep) {
         month: '2-digit',
         year: 'numeric'
       }).replace(/\./g, '/');
-      out += `  ${dateFmt}: ${rep[worker][d].toFixed(2)}h\n`;
     }
   }
   return out.trim();
