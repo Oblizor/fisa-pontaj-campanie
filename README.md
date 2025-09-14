@@ -29,11 +29,11 @@ Adjust the date range to cover weekly, monthly, or custom spans. The script scan
 
 ```
 Alice
-  2025-09-01: 7.50h
-  2025-09-05: 7.00h
+  01/09/2025: 7 h 30 m
+  05/09/2025: 7 h 00 m
 
 bob
-  2025-09-02: 4.00h
+  02/09/2025: 4 h 00 m
 ```
 
 For date ranges without any activity, the script prints:

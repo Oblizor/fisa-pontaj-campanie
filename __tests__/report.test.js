@@ -54,11 +54,11 @@ test('CLI reports hours and shows no activity when appropriate', () => {
     const out = execFileSync('node', ['report.js', '--from', '2025-09-01', '--to', '2025-09-30', '--dir', tmpDir], { encoding: 'utf8' }).trim();
     expect(out).toBe(
       ['Alice',
-       '  2025-09-01: 7.50h',
-       '  2025-09-05: 7.00h',
+       '  01/09/2025: 7 h 30 m',
+       '  05/09/2025: 7 h 00 m',
        '',
        'bob',
-       '  2025-09-02: 4.00h'].join('\n')
+       '  02/09/2025: 4 h 00 m'].join('\n')
     );
 
     const noActivity = execFileSync('node', ['report.js', '--from', '2025-08-01', '--to', '2025-08-31', '--dir', tmpDir], { encoding: 'utf8' }).trim();

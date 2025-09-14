@@ -18,6 +18,13 @@ function computeHours(row) {
   return Math.max(0, (end - start - breakMin) / 60);
 }
 
+function formatHM(hours) {
+  const totalMins = Math.round(hours * 60);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return `${h} h ${m.toString().padStart(2, '0')} m`;
+}
+
 function loadJson(file) {
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
   return data;
@@ -62,7 +69,12 @@ function formatReport(rep) {
     out += `\n${worker}\n`;
     const dates = Object.keys(rep[worker]).sort();
     for (const d of dates) {
-      out += `  ${d}: ${rep[worker][d].toFixed(2)}h\n`;
+      const dateFmt = new Date(d).toLocaleDateString('ro-RO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).replace(/\./g, '/');
+      out += `  ${dateFmt}: ${formatHM(rep[worker][d])}\n`;
     }
   }
   return out.trim();

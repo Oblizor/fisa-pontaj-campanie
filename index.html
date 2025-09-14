@@ -160,7 +160,7 @@
           <tfoot class="bg-gray-50 dark:bg-gray-700">
             <tr>
               <td colspan="6" class="px-3 py-3 text-right font-semibold">Total general (ore):</td>
-              <td class="px-3 py-3 text-right"><span id="grandTotal" class="font-bold">0.00</span></td>
+              <td class="px-3 py-3 text-right"><span id="grandTotal" class="font-bold">0 h 00 m</span></td>
             </tr>
           </tfoot>
         </table>
@@ -194,12 +194,12 @@
     <td class="px-3 py-2 align-top">
       <div class="flex items-center gap-2">
         <button type="button" class="start-stop focusable px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold">Start</button>
-        <input type="time" step="60" class="row-start focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
+        <input class="row-start focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
       </div>
     </td>
     <td class="px-3 py-2 align-top">
       <div class="flex items-center gap-2">
-        <input type="time" step="60" class="row-end focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
+        <input class="row-end focusable block w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" />
         <label class="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 select-none">
           <input type="checkbox" class="next-day-toggle focusable" />
           <span>Zi următoare</span>
@@ -213,7 +213,7 @@
       <textarea rows="1" class="row-notes focusable block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 border" placeholder="ex: cules, sortare..."></textarea>
     </td>
     <td class="px-3 py-2 align-top text-right">
-      <output class="rowTotal font-medium">0.00</output>
+      <output class="rowTotal font-medium">0 h 00 m</output>
     </td>
   </tr>
 </template>
@@ -244,10 +244,35 @@
       let githubConfig = { token: '', repo: '' };
       let saveTimeout = null;
 
+      flatpickr(els.reportFrom, {
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y"
+      });
+      flatpickr(els.reportTo, {
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y"
+      });
+
       const slug = s => (s || "").normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const currentWorker = () => els.workerSelect.value === "__custom" ? (els.workerName.value.trim() || "custom") : els.workerSelect.value;
       const getFileName = () => `data/pontaj_${slug(currentWorker())}.json`;
       const getLocalStorageKey = () => `pontaj-v3.4-local-${slug(currentWorker())}`;
+
+      const formatDateRO = date =>
+        date.toLocaleDateString('ro-RO', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }).replace(/\./g, '/');
+      const formatTimeRO = date =>
+        date.toLocaleTimeString('ro-RO', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+      const formatDateTimeRO = date => `${formatDateRO(date)} ${formatTimeRO(date)}`;
 
       function updateStatus(status, msg) {
         els.statusIndicator.className = `status-indicator status-${status}`;
@@ -303,12 +328,12 @@
              // File doesn't exist, which is fine.
           }
           const payload = {
-            message: `Update: ${currentWorker()} – ${new Date().toLocaleString("ro-RO")}`,
+            message: `Update: ${currentWorker()} – ${formatDateTimeRO(new Date())}`,
             content,
             ...(sha ? { sha } : {}),
           };
           await githubRequest(path, { method: "PUT", body: JSON.stringify(payload) });
-          updateStatus("saved", `Sincronizat la ${new Date().toLocaleTimeString()}`);
+          updateStatus("saved", `Sincronizat la ${formatTimeRO(new Date())}`);
         } catch (e) {
           updateStatus("error", `Eroare GitHub: ${e.message}`);
         }
@@ -343,10 +368,17 @@
         return Math.max(0, endMins - startMins - (parseInt(breakMin, 10) || 0)) / 60;
       };
 
+      const formatHM = hours => {
+        const totalMins = Math.round(hours * 60);
+        const h = Math.floor(totalMins / 60);
+        const m = totalMins % 60;
+        return `${h} h ${m.toString().padStart(2, '0')} m`;
+      };
+
       const computeGrand = () => {
         let total = 0;
-        els.tableBody.querySelectorAll("tr").forEach(tr => total += parseFloat(tr.querySelector("output.rowTotal").textContent || 0));
-        els.grandTotal.textContent = total.toFixed(2);
+        els.tableBody.querySelectorAll("output.rowTotal").forEach(out => total += parseFloat(out.dataset.hours || 0));
+        els.grandTotal.textContent = formatHM(total);
       };
 
     const getTableData = () => {
@@ -412,7 +444,7 @@
         if (!data || Object.keys(data).length === 0) {
           const lastRow = els.tableBody.querySelector("tr:last-child");
           if (lastRow) {
-            const lastEnd = lastRow.querySelectorAll('input[type="time"]')[1]?.value || "";
+            const lastEnd = lastRow.querySelector('.row-end')?.value || "";
             data = { start: lastEnd };
           }
         }
@@ -431,20 +463,36 @@
 
         flatpickr(date, {
           dateFormat: "Y-m-d",
+          altInput: true,
+          altFormat: "d/m/Y",
           defaultDate: data && data.date ? data.date : null,
           minDate: new Date(new Date().getFullYear(), 0, 1),
           maxDate: new Date(new Date().getFullYear(), 11, 31)
         });
+        flatpickr(start, {
+          enableTime: true,
+          noCalendar: true,
+          dateFormat: "H:i",
+          time_24hr: true,
+          defaultDate: data && data.start ? data.start : null
+        });
+        flatpickr(end, {
+          enableTime: true,
+          noCalendar: true,
+          dateFormat: "H:i",
+          time_24hr: true,
+          defaultDate: data && data.end ? data.end : null
+        });
 
         if (data) {
-          start.value = data.start || ""; end.value = data.end || "";
           breakMin.value = data.breakMin ?? 0; notes.value = data.notes || "";
           if (nextDay && typeof data.nextDay === "boolean") nextDay.checked = data.nextDay;
         }
 
         const recalc = () => {
           const dur = computeDuration(start.value, end.value, breakMin.value, nextDay && nextDay.checked);
-          out.textContent = dur.toFixed(2);
+          out.textContent = formatHM(dur);
+          out.dataset.hours = dur;
           computeGrand();
           debouncedSave();
         };
@@ -458,7 +506,7 @@
               timer = null;
               const now = new Date();
               const t = now.toTimeString().slice(0,5);
-              end.value = t;
+              end._flatpickr.setDate(t, true, "H:i");
               startStopBtn.textContent = "Start";
               startStopBtn.classList.remove("bg-red-600", "hover:bg-red-700");
               startStopBtn.classList.add("bg-green-600", "hover:bg-green-700");
@@ -466,8 +514,8 @@
             } else {
               const now = new Date();
               const t = now.toTimeString().slice(0,5);
-              start.value = t;
-              end.value = t;
+              start._flatpickr.setDate(t, true, "H:i");
+              end._flatpickr.setDate(t, true, "H:i");
               startStopBtn.textContent = "Stop";
               startStopBtn.classList.remove("bg-green-600", "hover:bg-green-700");
               startStopBtn.classList.add("bg-red-600", "hover:bg-red-700");
@@ -475,7 +523,7 @@
               timer = setInterval(() => {
                 const now = new Date();
                 const tt = now.toTimeString().slice(0,5);
-                end.value = tt;
+                end._flatpickr.setDate(tt, true, "H:i");
                 recalc();
               }, 1000);
             }
