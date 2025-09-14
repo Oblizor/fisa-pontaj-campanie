@@ -1,7 +1,7 @@
 {
   "meta": {
     "worker": "Neagu Marian",
-    "lastUpdated": "2025-09-14T13:55:05.785Z",
+    "lastUpdated": "2025-09-14T13:55:08.688Z",
     "version": "3.4"
   },
   "rows": [
@@ -80,7 +80,7 @@
     {
       "date": "2025-09-08",
       "start": "09:50",
-      "end": "",
+      "end": "12:50",
       "nextDay": false,
       "breakMin": 0,
       "notes": ""
