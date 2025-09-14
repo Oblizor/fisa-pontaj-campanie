@@ -244,10 +244,35 @@
       let githubConfig = { token: '', repo: '' };
       let saveTimeout = null;
 
+      flatpickr(els.reportFrom, {
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y"
+      });
+      flatpickr(els.reportTo, {
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y"
+      });
+
       const slug = s => (s || "").normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const currentWorker = () => els.workerSelect.value === "__custom" ? (els.workerName.value.trim() || "custom") : els.workerSelect.value;
       const getFileName = () => `data/pontaj_${slug(currentWorker())}.json`;
       const getLocalStorageKey = () => `pontaj-v3.4-local-${slug(currentWorker())}`;
+
+      const formatDateRO = date =>
+        date.toLocaleDateString('ro-RO', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }).replace(/\./g, '/');
+      const formatTimeRO = date =>
+        date.toLocaleTimeString('ro-RO', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+      const formatDateTimeRO = date => `${formatDateRO(date)} ${formatTimeRO(date)}`;
 
       function updateStatus(status, msg) {
         els.statusIndicator.className = `status-indicator status-${status}`;
@@ -303,12 +328,12 @@
              // File doesn't exist, which is fine.
           }
           const payload = {
-            message: `Update: ${currentWorker()} – ${new Date().toLocaleString("ro-RO")}`,
+            message: `Update: ${currentWorker()} – ${formatDateTimeRO(new Date())}`,
             content,
             ...(sha ? { sha } : {}),
           };
           await githubRequest(path, { method: "PUT", body: JSON.stringify(payload) });
-          updateStatus("saved", `Sincronizat la ${new Date().toLocaleTimeString()}`);
+          updateStatus("saved", `Sincronizat la ${formatTimeRO(new Date())}`);
         } catch (e) {
           updateStatus("error", `Eroare GitHub: ${e.message}`);
         }
@@ -431,6 +456,8 @@
 
         flatpickr(date, {
           dateFormat: "Y-m-d",
+          altInput: true,
+          altFormat: "d/m/Y",
           defaultDate: data && data.date ? data.date : null,
           minDate: new Date(new Date().getFullYear(), 0, 1),
           maxDate: new Date(new Date().getFullYear(), 11, 31)
