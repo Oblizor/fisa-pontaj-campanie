@@ -25,6 +25,16 @@ function formatHM(hours) {
   return `${h} h ${m.toString().padStart(2, '0')} m`;
 }
 
+function parseDateInput(str) {
+  if (typeof str !== 'string') return new Date(NaN);
+  const ro = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (ro) {
+    const [, day, month, year] = ro;
+    return new Date(`${year}-${month}-${day}`);
+  }
+  return new Date(str);
+}
+
 function loadJson(file) {
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
   return data;
@@ -91,8 +101,8 @@ function formatReport(rep, format = 'decimal') {
 
 if (require.main === module) {
   program
-    .requiredOption('--from <date>', 'start date (YYYY-MM-DD)')
-    .requiredOption('--to <date>', 'end date (YYYY-MM-DD)')
+    .requiredOption('--from <date>', 'start date (DD/MM/YYYY or YYYY-MM-DD)')
+    .requiredOption('--to <date>', 'end date (DD/MM/YYYY or YYYY-MM-DD)')
     .option('--dir <path>', 'directory with timesheets', path.join(__dirname, 'data'))
     .option('--format <type>', 'output format (decimal or hours-minutes)', 'decimal');
 
@@ -105,13 +115,13 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const fromDate = new Date(from);
+  const fromDate = parseDateInput(from);
   if (isNaN(fromDate)) {
     console.error(`Invalid --from date: ${from}`);
     process.exit(1);
   }
 
-  const toDate = new Date(to);
+  const toDate = parseDateInput(to);
   if (isNaN(toDate)) {
     console.error(`Invalid --to date: ${to}`);
     process.exit(1);
@@ -123,7 +133,7 @@ if (require.main === module) {
   }
 
   try {
-    const rep = generateReport(dir, from, to);
+    const rep = generateReport(dir, fromDate, toDate);
     const formatted = formatReport(rep, format);
     if (formatted) {
       console.log(formatted);

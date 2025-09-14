@@ -53,7 +53,7 @@ test('CLI reports hours and shows no activity when appropriate', () => {
     fs.writeFileSync(path.join(tmpDir, 'pontaj_bob.json'), JSON.stringify(workerB));
 
     // Test default 'decimal' format
-    const outDecimal = execFileSync('node', ['report.js', '--from', '2025-09-01', '--to', '2025-09-30', '--dir', tmpDir], { encoding: 'utf8' }).trim();
+    const outDecimal = execFileSync('node', ['report.js', '--from', '01/09/2025', '--to', '30/09/2025', '--dir', tmpDir], { encoding: 'utf8' }).trim();
     expect(outDecimal).toBe(
       [
         'Alice',
@@ -65,7 +65,7 @@ test('CLI reports hours and shows no activity when appropriate', () => {
     );
 
     // Test 'hours-minutes' format
-    const outHM = execFileSync('node', ['report.js', '--from', '2025-09-01', '--to', '2025-09-30', '--dir', tmpDir, '--format', 'hours-minutes'], { encoding: 'utf8' }).trim();
+    const outHM = execFileSync('node', ['report.js', '--from', '01/09/2025', '--to', '30/09/2025', '--dir', tmpDir, '--format', 'hours-minutes'], { encoding: 'utf8' }).trim();
     expect(outHM).toBe(
       [
         'Alice',
@@ -76,7 +76,7 @@ test('CLI reports hours and shows no activity when appropriate', () => {
       ].join('\n')
     );
 
-    const noActivity = execFileSync('node', ['report.js', '--from', '2025-08-01', '--to', '2025-08-31', '--dir', tmpDir], { encoding: 'utf8' }).trim();
+    const noActivity = execFileSync('node', ['report.js', '--from', '01/08/2025', '--to', '31/08/2025', '--dir', tmpDir], { encoding: 'utf8' }).trim();
     expect(noActivity).toBe('No activity found for selected period.');
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
