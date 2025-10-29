@@ -111,6 +111,32 @@ describe('advanced reporting', () => {
     }
   });
 
+  test('CLI supports custom date format tokens', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pontaj-cli-format-'));
+    try {
+      writeTimesheet(tmpDir, 'pontaj_alice.json', {
+        meta: { worker: 'Alice' },
+        rows: [
+          { date: '2025-09-01', start: '08:00', end: '16:00', breakMin: 30 }
+        ]
+      });
+
+      const output = execFileSync('node', [
+        'report.js',
+        '--from', '01/09/2025',
+        '--to', '30/09/2025',
+        '--dir', tmpDir,
+        '--format', 'hours-minutes',
+        '--date-format', 'DD MM YYYY'
+      ], { encoding: 'utf8' }).trim();
+
+      expect(output).toContain('    2025-W35 (01 09 2025 - 07 09 2025): 7 h 30 m');
+      expect(output).toContain('    01 09 2025: 7 h 30 m (Reg: 7 h 30 m, Supl: 0 h 00 m) [1 schimb]');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   test('importTimesheet merges rows from CSV', async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pontaj-import-test-'));
     const dataDir = path.join(tmpDir, 'data');
