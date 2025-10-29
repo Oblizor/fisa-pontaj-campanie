@@ -13,6 +13,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
     body { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial; }
 
@@ -122,10 +124,14 @@
       <button id="addRow" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Adaugă rând</button>
       <button id="deleteSelected" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700">Șterge selectatele</button>
       <button id="exportCSV" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Export CSV</button>
+      <button id="exportPDF" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700">Export PDF</button>
+      <button id="exportExcel" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-700">Export Excel</button>
+      <button id="importData" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600">Importă</button>
       <button id="printBtn" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-800">Printează</button>
       <button id="resetData" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600">Resetează date</button>
       <button id="syncData" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700">Sincronizează</button>
       <button id="viewReports" type="button" class="focusable inline-flex items-center justify-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Rapoarte</button>
+      <input id="importFile" type="file" accept=".csv,.json,.xlsx" class="hidden" />
     </section>
 
     <form id="timesheetForm" class="bg-white dark:bg-gray-800 rounded-xl shadow-md ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
@@ -219,7 +225,14 @@
 </template>
 
   <script type="module">
-    import { generateReport, formatReport } from './report-client.js';
+    import {
+      generateReport,
+      formatReport,
+      exportReportToCsv,
+      exportReportToPdf,
+      exportReportToExcel,
+      importTimesheetFile
+    } from './report-client.js';
     document.addEventListener("DOMContentLoaded", () => {
       // --- State, Helpers & Elements ---
       const WORKERS = ["Prică Jenița", "Neagu Marian", "Banu Mitică", "Prică Emilian"];
@@ -227,6 +240,8 @@
         tableBody: document.getElementById("tableBody"), rowTmpl: document.getElementById("rowTemplate"),
         grandTotal: document.getElementById("grandTotal"), addRow: document.getElementById("addRow"),
         deleteSelected: document.getElementById("deleteSelected"), exportCSV: document.getElementById("exportCSV"),
+        exportPDF: document.getElementById("exportPDF"), exportExcel: document.getElementById("exportExcel"),
+        importData: document.getElementById("importData"), importFile: document.getElementById("importFile"),
         printBtn: document.getElementById("printBtn"), resetData: document.getElementById("resetData"),
         syncData: document.getElementById("syncData"), workerSelect: document.getElementById("workerSelect"),
         workerName: document.getElementById("workerName"), githubModal: document.getElementById("githubModal"),
@@ -380,6 +395,37 @@
         els.tableBody.querySelectorAll("output.rowTotal").forEach(out => total += parseFloat(out.dataset.hours || 0));
         els.grandTotal.textContent = formatHM(total);
       };
+
+      async function gatherTimesheets(includeCurrent = true) {
+        const workerSet = new Set(WORKERS);
+        if (includeCurrent) {
+          const cur = currentWorker();
+          if (cur) workerSet.add(cur);
+        }
+
+        const results = [];
+        for (const workerName of workerSet) {
+          if (!workerName) continue;
+          const path = `data/pontaj_${slug(workerName)}.json`;
+          let data = null;
+          if (githubConfig.token && githubConfig.repo) {
+            try {
+              const res = await githubRequest(path);
+              data = JSON.parse(decodeURIComponent(escape(atob(res.content))));
+            } catch (e) {
+              data = null;
+            }
+          }
+          if (!data) {
+            const local = localStorage.getItem(`pontaj-v3.4-local-${slug(workerName)}`);
+            if (local) {
+              try { data = JSON.parse(local); } catch { data = null; }
+            }
+          }
+          if (data) results.push(data);
+        }
+        return results;
+      }
 
     const getTableData = () => {
         const rows = [];
@@ -547,26 +593,66 @@
 
       const runReport = async () => {
         els.reportOutput.textContent = 'Se generează...';
-        const from = els.reportFrom.value;
-        const to = els.reportTo.value;
-        const timesheets = [];
-        for (const w of WORKERS) {
-          const path = `data/pontaj_${slug(w)}.json`;
-          let data = null;
-          try {
-            const res = await githubRequest(path);
-            data = JSON.parse(decodeURIComponent(escape(atob(res.content))));
-          } catch (e) {
-            const local = localStorage.getItem(`pontaj-v3.4-local-${slug(w)}`);
-            if (local) {
-              try { data = JSON.parse(local); } catch { data = null; }
-            }
-          }
-          if (data) timesheets.push(data);
+        const from = els.reportFrom.value || null;
+        const to = els.reportTo.value || null;
+        try {
+          const timesheets = await gatherTimesheets();
+          const report = generateReport(timesheets, from, to);
+          const formatted = formatReport(report, 'hours-minutes');
+          els.reportOutput.textContent = formatted || 'Nicio activitate pentru perioada selectată.';
+        } catch (error) {
+          els.reportOutput.textContent = `Eroare la generarea raportului: ${error.message}`;
         }
-        const rep = generateReport(timesheets, from, to);
-        const formatted = formatReport(rep);
-        els.reportOutput.textContent = formatted || 'Nicio activitate pentru perioada selectată.';
+      };
+
+      const sanitizeFileSegment = value => (value && value.length ? value.replace(/[^0-9a-zA-Z]+/gi, '-') : 'toate');
+
+      const exportReportFile = async type => {
+        const from = els.reportFrom.value || null;
+        const to = els.reportTo.value || null;
+        try {
+          const timesheets = await gatherTimesheets();
+          if (!timesheets.length) {
+            throw new Error('Nu există date pentru export. Salvează pontaje și încearcă din nou.');
+          }
+          const report = generateReport(timesheets, from, to);
+          const baseName = `raport_${sanitizeFileSegment(from)}_${sanitizeFileSegment(to)}`;
+          if (type === 'csv') {
+            exportReportToCsv(report, `${baseName}.csv`);
+          } else if (type === 'pdf') {
+            await exportReportToPdf(report, `${baseName}.pdf`);
+          } else if (type === 'excel') {
+            await exportReportToExcel(report, `${baseName}.xlsx`);
+          } else {
+            throw new Error(`Format de export necunoscut: ${type}`);
+          }
+          updateStatus('saved', `Raport ${type.toUpperCase()} generat.`);
+        } catch (error) {
+          alert(`Eroare export: ${error.message}`);
+        }
+      };
+
+      const handleImport = async event => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+          const rows = await importTimesheetFile(file);
+          const blanks = Array.from(els.tableBody.querySelectorAll('tr')).filter(tr => {
+            const date = tr.querySelector('.row-date')?.value;
+            const start = tr.querySelector('.row-start')?.value;
+            const end = tr.querySelector('.row-end')?.value;
+            return !date && !start && !end;
+          });
+          blanks.forEach(tr => tr.remove());
+          rows.forEach(r => addRowUI(r));
+          computeGrand();
+          save();
+          updateStatus('saved', `Importate ${rows.length} rânduri.`);
+        } catch (error) {
+          alert(`Eroare import: ${error.message}`);
+        } finally {
+          event.target.value = '';
+        }
       };
       
       // --- Event Listeners & Init ---
@@ -609,7 +695,11 @@
         });
         els.testConnection.addEventListener("click", testGitHubConnection);
 
-        els.exportCSV.addEventListener("click", () => { /* Add export logic here if needed */ });
+        els.exportCSV.addEventListener("click", () => exportReportFile('csv'));
+        els.exportPDF.addEventListener("click", () => exportReportFile('pdf'));
+        els.exportExcel.addEventListener("click", () => exportReportFile('excel'));
+        els.importData.addEventListener("click", () => els.importFile.click());
+        els.importFile.addEventListener("change", handleImport);
 
         els.viewReports.addEventListener("click", () => els.reportsModal.classList.remove("hidden"));
         els.closeReportsModal.addEventListener("click", () => els.reportsModal.classList.add("hidden"));
