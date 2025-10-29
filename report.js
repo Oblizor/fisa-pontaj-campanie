@@ -1,9 +1,32 @@
 const fs = require('fs');
 const path = require('path');
 const { program } = require('commander');
-const ExcelJS = require('exceljs');
-const PDFDocument = require('pdfkit');
 const { parse: parseCSV } = require('csv-parse/sync');
+
+let ExcelJSLib = null;
+let PDFDocumentConstructor = null;
+
+function getExcelJS() {
+  if (!ExcelJSLib) {
+    try {
+      ExcelJSLib = require('exceljs');
+    } catch (error) {
+      throw new Error('Excel support requires the "exceljs" package. Run "npm install exceljs" to enable this feature.');
+    }
+  }
+  return ExcelJSLib;
+}
+
+function getPDFDocument() {
+  if (!PDFDocumentConstructor) {
+    try {
+      PDFDocumentConstructor = require('pdfkit');
+    } catch (error) {
+      throw new Error('PDF export requires the "pdfkit" package. Run "npm install pdfkit" to enable this feature.');
+    }
+  }
+  return PDFDocumentConstructor;
+}
 
 const DEFAULT_OVERTIME_THRESHOLD = 8;
 const DEFAULT_OVERTIME_RATE = 1.5;
@@ -270,7 +293,38 @@ function formatDateRO(dateStr) {
     .replace(/\./g, '/');
 }
 
-function formatReport(report, mode = 'decimal') {
+function createDateFormatter(pattern) {
+  if (!pattern) {
+    return formatDateRO;
+  }
+
+  const trimmed = String(pattern).trim();
+  if (!trimmed) {
+    return formatDateRO;
+  }
+
+  const tokenFormatters = {
+    YYYY: date => String(date.getFullYear()),
+    YY: date => String(date.getFullYear()).slice(-2),
+    MM: date => String(date.getMonth() + 1).padStart(2, '0'),
+    M: date => String(date.getMonth() + 1),
+    DD: date => String(date.getDate()).padStart(2, '0'),
+    D: date => String(date.getDate())
+  };
+
+  const tokenRegex = new RegExp(Object.keys(tokenFormatters).sort((a, b) => b.length - a.length).join('|'), 'g');
+
+  return dateStr => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date)) {
+      return dateStr;
+    }
+    return trimmed.replace(tokenRegex, match => tokenFormatters[match](date));
+  };
+}
+
+function formatReport(report, mode = 'decimal', dateFormatter = formatDateRO) {
   if (!report || !report.workers || Object.keys(report.workers).length === 0) {
     return '';
   }
@@ -288,7 +342,7 @@ function formatReport(report, mode = 'decimal') {
       lines.push('  Săptămâni:');
       for (const week of weekly) {
         lines.push(
-          `    ${week.key} (${formatDateRO(week.start)} - ${formatDateRO(week.end)}): ${formatHoursValue(week.totalHours, mode)} (Reg: ${formatHoursValue(week.regularHours, mode)}, Supl: ${formatHoursValue(week.overtimeHours, mode)})`
+          `    ${week.key} (${dateFormatter(week.start)} - ${dateFormatter(week.end)}): ${formatHoursValue(week.totalHours, mode)} (Reg: ${formatHoursValue(week.regularHours, mode)}, Supl: ${formatHoursValue(week.overtimeHours, mode)})`
         );
       }
     }
@@ -298,7 +352,7 @@ function formatReport(report, mode = 'decimal') {
       lines.push('  Zile:');
       for (const day of daily) {
         lines.push(
-          `    ${formatDateRO(day.date)}: ${formatHoursValue(day.totalHours, mode)} (Reg: ${formatHoursValue(day.regularHours, mode)}, Supl: ${formatHoursValue(day.overtimeHours, mode)}) [${day.entries} schimb${day.entries === 1 ? '' : 'uri'}]`
+          `    ${dateFormatter(day.date)}: ${formatHoursValue(day.totalHours, mode)} (Reg: ${formatHoursValue(day.regularHours, mode)}, Supl: ${formatHoursValue(day.overtimeHours, mode)}) [${day.entries} schimb${day.entries === 1 ? '' : 'uri'}]`
         );
       }
     }
@@ -322,7 +376,7 @@ function formatReport(report, mode = 'decimal') {
   return lines.join('\n').trim();
 }
 
-function buildCsvRows(report) {
+function buildCsvRows(report, dateFormatter = formatDateRO) {
   const rows = [['Worker', 'Scope', 'Label', 'Total Hours', 'Regular Hours', 'Overtime Hours', 'Weighted Hours']];
   for (const workerName of Object.keys(report.workers)) {
     const worker = report.workers[workerName];
@@ -340,7 +394,7 @@ function buildCsvRows(report) {
       rows.push([
         worker.name,
         'Săptămână',
-        `${week.key} (${week.start} - ${week.end})`,
+        `${week.key} (${dateFormatter(week.start)} - ${dateFormatter(week.end)})`,
         week.totalHours.toFixed(2),
         week.regularHours.toFixed(2),
         week.overtimeHours.toFixed(2),
@@ -352,7 +406,7 @@ function buildCsvRows(report) {
       rows.push([
         worker.name,
         'Zi',
-        day.date,
+        dateFormatter(day.date),
         day.totalHours.toFixed(2),
         day.regularHours.toFixed(2),
         day.overtimeHours.toFixed(2),
@@ -389,8 +443,9 @@ function buildCsvRows(report) {
   return rows;
 }
 
-function exportReportToCSV(report, filePath) {
-  const rows = buildCsvRows(report);
+function exportReportToCSV(report, filePath, options = {}) {
+  const { dateFormatter = formatDateRO } = options;
+  const rows = buildCsvRows(report, dateFormatter);
   const csv = rows
     .map(r => r.map(value => {
       if (value === undefined || value === null) return '';
@@ -405,8 +460,9 @@ function exportReportToCSV(report, filePath) {
   return filePath;
 }
 
-function exportReportToPDF(report, filePath, mode = 'hours-minutes') {
+function exportReportToPDF(report, filePath, mode = 'hours-minutes', options = {}) {
   return new Promise((resolve, reject) => {
+    const PDFDocument = getPDFDocument();
     const doc = new PDFDocument({ margin: 36 });
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
@@ -414,7 +470,8 @@ function exportReportToPDF(report, filePath, mode = 'hours-minutes') {
     doc.fontSize(16).text('Raport pontaj', { align: 'center' });
     doc.moveDown();
 
-    const text = formatReport(report, mode) || 'Nicio activitate pentru perioada selectată.';
+    const { dateFormatter = formatDateRO } = options;
+    const text = formatReport(report, mode, dateFormatter) || 'Nicio activitate pentru perioada selectată.';
     const lines = text.split('\n');
     doc.fontSize(11);
     for (const line of lines) {
@@ -427,7 +484,9 @@ function exportReportToPDF(report, filePath, mode = 'hours-minutes') {
   });
 }
 
-async function exportReportToExcel(report, filePath) {
+async function exportReportToExcel(report, filePath, options = {}) {
+  const ExcelJS = getExcelJS();
+  const { dateFormatter = formatDateRO } = options;
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Fișă de Pontaj';
   workbook.created = new Date();
@@ -459,7 +518,15 @@ async function exportReportToExcel(report, filePath) {
     Object.values(worker.weekly)
       .sort((a, b) => new Date(a.start) - new Date(b.start))
       .forEach(week => {
-        sheet.addRow([week.key, week.start, week.end, week.totalHours, week.regularHours, week.overtimeHours, week.weightedHours]);
+        sheet.addRow([
+          week.key,
+          dateFormatter(week.start),
+          dateFormatter(week.end),
+          week.totalHours,
+          week.regularHours,
+          week.overtimeHours,
+          week.weightedHours
+        ]);
       });
 
     sheet.addRow([]);
@@ -468,7 +535,14 @@ async function exportReportToExcel(report, filePath) {
     Object.values(worker.daily)
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .forEach(day => {
-        sheet.addRow([day.date, day.totalHours, day.regularHours, day.overtimeHours, day.weightedHours, day.entries]);
+        sheet.addRow([
+          dateFormatter(day.date),
+          day.totalHours,
+          day.regularHours,
+          day.overtimeHours,
+          day.weightedHours,
+          day.entries
+        ]);
       });
 
     sheet.columns.forEach(col => { if (col) col.width = 18; });
@@ -478,19 +552,19 @@ async function exportReportToExcel(report, filePath) {
   return filePath;
 }
 
-async function exportReport(report, format, filePath, mode = 'hours-minutes') {
+async function exportReport(report, format, filePath, mode = 'hours-minutes', options = {}) {
   if (!format) return null;
   const resolvedPath = path.resolve(filePath);
   switch (format) {
     case 'csv':
-      exportReportToCSV(report, resolvedPath);
+      exportReportToCSV(report, resolvedPath, options);
       return resolvedPath;
     case 'pdf':
-      await exportReportToPDF(report, resolvedPath, mode);
+      await exportReportToPDF(report, resolvedPath, mode, options);
       return resolvedPath;
     case 'excel':
     case 'xlsx':
-      await exportReportToExcel(report, resolvedPath);
+      await exportReportToExcel(report, resolvedPath, options);
       return resolvedPath;
     default:
       throw new Error(`Unsupported export format: ${format}`);
@@ -551,6 +625,7 @@ function parseImportedRowsFromCSV(content) {
 }
 
 async function parseImportedRowsFromExcel(buffer) {
+  const ExcelJS = getExcelJS();
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);
   const sheet = workbook.worksheets[0];
@@ -653,6 +728,7 @@ if (require.main === module) {
     .option('--format <type>', 'output format (decimal or hours-minutes)', 'decimal')
     .option('--export <type>', 'export report to csv, pdf or excel')
     .option('--output <file>', 'output path when exporting report')
+    .option('--date-format <pattern>', 'custom date format using tokens DD, MM, YYYY, YY, M, D')
     .option('--overtime-threshold <hours>', 'overtime threshold in hours per day', parseFloat, DEFAULT_OVERTIME_THRESHOLD)
     .option('--overtime-rate <multiplier>', 'overtime rate multiplier', parseFloat, DEFAULT_OVERTIME_RATE)
     .option('--import <file>', 'import timesheet rows from file')
@@ -710,13 +786,14 @@ if (require.main === module) {
         overtimeThreshold: opts.overtimeThreshold,
         overtimeRate: opts.overtimeRate
       });
-      const formatted = formatReport(report, opts.format);
+      const dateFormatter = createDateFormatter(opts.dateFormat);
+      const formatted = formatReport(report, opts.format, dateFormatter);
       if (opts.export) {
         if (!opts.output) {
           console.error('When using --export you must also provide --output.');
           process.exit(1);
         }
-        await exportReport(report, opts.export, opts.output, opts.format);
+        await exportReport(report, opts.export, opts.output, opts.format, { dateFormatter });
         console.log(`Report exported to ${path.resolve(opts.output)}`);
       } else if (formatted) {
         console.log(formatted);
@@ -736,6 +813,7 @@ module.exports = {
   buildReport,
   generateReport,
   formatReport,
+  createDateFormatter,
   computeHours,
   computeDailyStats,
   parseTime,

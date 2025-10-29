@@ -122,6 +122,37 @@ function formatDateRO(dateStr) {
     .replace(/\./g, '/');
 }
 
+export function createDateFormatter(pattern) {
+  if (!pattern) {
+    return formatDateRO;
+  }
+
+  const trimmed = String(pattern).trim();
+  if (!trimmed) {
+    return formatDateRO;
+  }
+
+  const tokenFormatters = {
+    YYYY: date => String(date.getFullYear()),
+    YY: date => String(date.getFullYear()).slice(-2),
+    MM: date => String(date.getMonth() + 1).padStart(2, '0'),
+    M: date => String(date.getMonth() + 1),
+    DD: date => String(date.getDate()).padStart(2, '0'),
+    D: date => String(date.getDate())
+  };
+
+  const tokenRegex = new RegExp(Object.keys(tokenFormatters).sort((a, b) => b.length - a.length).join('|'), 'g');
+
+  return dateStr => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date)) {
+      return dateStr;
+    }
+    return trimmed.replace(tokenRegex, match => tokenFormatters[match](date));
+  };
+}
+
 export function generateReport(timesheets = [], fromDate, toDate, options = {}) {
   const {
     overtimeThreshold = DEFAULT_OVERTIME_THRESHOLD,
@@ -212,7 +243,7 @@ export function generateReport(timesheets = [], fromDate, toDate, options = {}) 
   return report;
 }
 
-export function formatReport(report, mode = 'decimal') {
+export function formatReport(report, mode = 'decimal', dateFormatter = formatDateRO) {
   if (!report || !report.workers || Object.keys(report.workers).length === 0) {
     return '';
   }
@@ -229,7 +260,7 @@ export function formatReport(report, mode = 'decimal') {
     if (weekly.length) {
       lines.push('  Săptămâni:');
       for (const week of weekly) {
-        lines.push(`    ${week.key} (${formatDateRO(week.start)} - ${formatDateRO(week.end)}): ${formatHoursValue(week.totalHours, mode)} (Reg: ${formatHoursValue(week.regularHours, mode)}, Supl: ${formatHoursValue(week.overtimeHours, mode)})`);
+        lines.push(`    ${week.key} (${dateFormatter(week.start)} - ${dateFormatter(week.end)}): ${formatHoursValue(week.totalHours, mode)} (Reg: ${formatHoursValue(week.regularHours, mode)}, Supl: ${formatHoursValue(week.overtimeHours, mode)})`);
       }
     }
 
@@ -237,7 +268,7 @@ export function formatReport(report, mode = 'decimal') {
     if (daily.length) {
       lines.push('  Zile:');
       for (const day of daily) {
-        lines.push(`    ${formatDateRO(day.date)}: ${formatHoursValue(day.totalHours, mode)} (Reg: ${formatHoursValue(day.regularHours, mode)}, Supl: ${formatHoursValue(day.overtimeHours, mode)}) [${day.entries} schimb${day.entries === 1 ? '' : 'uri'}]`);
+        lines.push(`    ${dateFormatter(day.date)}: ${formatHoursValue(day.totalHours, mode)} (Reg: ${formatHoursValue(day.regularHours, mode)}, Supl: ${formatHoursValue(day.overtimeHours, mode)}) [${day.entries} schimb${day.entries === 1 ? '' : 'uri'}]`);
       }
     }
 
@@ -256,7 +287,7 @@ export function formatReport(report, mode = 'decimal') {
   return lines.join('\n').trim();
 }
 
-function buildCsvRows(report) {
+function buildCsvRows(report, dateFormatter = formatDateRO) {
   const rows = [['Worker', 'Scope', 'Label', 'Total Hours', 'Regular Hours', 'Overtime Hours', 'Weighted Hours']];
   for (const workerName of Object.keys(report.workers)) {
     const worker = report.workers[workerName];
@@ -274,7 +305,7 @@ function buildCsvRows(report) {
       rows.push([
         worker.name,
         'Săptămână',
-        `${week.key} (${week.start} - ${week.end})`,
+        `${week.key} (${dateFormatter(week.start)} - ${dateFormatter(week.end)})`,
         week.totalHours.toFixed(2),
         week.regularHours.toFixed(2),
         week.overtimeHours.toFixed(2),
@@ -286,7 +317,7 @@ function buildCsvRows(report) {
       rows.push([
         worker.name,
         'Zi',
-        day.date,
+        dateFormatter(day.date),
         day.totalHours.toFixed(2),
         day.regularHours.toFixed(2),
         day.overtimeHours.toFixed(2),
@@ -348,12 +379,13 @@ function downloadBlob(content, mimeType, fileName) {
   URL.revokeObjectURL(url);
 }
 
-export function exportReportToCsv(report, fileName = 'raport.csv') {
-  const csv = csvFromRows(buildCsvRows(report));
+export function exportReportToCsv(report, fileName = 'raport.csv', options = {}) {
+  const { dateFormatter = formatDateRO } = options;
+  const csv = csvFromRows(buildCsvRows(report, dateFormatter));
   downloadBlob(csv, 'text/csv;charset=utf-8;', fileName);
 }
 
-export async function exportReportToPdf(report, fileName = 'raport.pdf', mode = 'hours-minutes') {
+export async function exportReportToPdf(report, fileName = 'raport.pdf', mode = 'hours-minutes', options = {}) {
   if (!window.PDFLib) {
     throw new Error('Biblioteca PDFLib nu este disponibilă. Asigură-te că scriptul pdf-lib este încărcat.');
   }
@@ -371,7 +403,8 @@ export async function exportReportToPdf(report, fileName = 'raport.pdf', mode = 
     return newPage;
   };
 
-  const text = formatReport(report, mode) || 'Nicio activitate pentru perioada selectată.';
+  const { dateFormatter = formatDateRO } = options;
+  const text = formatReport(report, mode, dateFormatter) || 'Nicio activitate pentru perioada selectată.';
   const lines = text.split('\n');
   let currentPage = page;
   currentPage.drawText('Raport pontaj', { x: margin, y, size: 16, font });
@@ -389,11 +422,12 @@ export async function exportReportToPdf(report, fileName = 'raport.pdf', mode = 
   downloadBlob(pdfBytes, 'application/pdf', fileName);
 }
 
-export async function exportReportToExcel(report, fileName = 'raport.xlsx') {
+export async function exportReportToExcel(report, fileName = 'raport.xlsx', options = {}) {
   if (!window.XLSX) {
     throw new Error('Biblioteca XLSX nu este disponibilă. Asigură-te că scriptul xlsx este încărcat.');
   }
-  const rows = buildCsvRows(report);
+  const { dateFormatter = formatDateRO } = options;
+  const rows = buildCsvRows(report, dateFormatter);
   const worksheet = window.XLSX.utils.aoa_to_sheet(rows);
   const workbook = window.XLSX.utils.book_new();
   window.XLSX.utils.book_append_sheet(workbook, worksheet, 'Raport');

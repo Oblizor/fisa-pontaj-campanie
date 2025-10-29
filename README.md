@@ -17,9 +17,10 @@ Use the `report.js` script to aggregate hours for all employees over a period. T
 node report.js --from 01/09/2025 --to 30/09/2025
 ```
 
-Run `--help` to see all available options:
+Run `--help` to see all available options. In addition to export switches, you can now control how dates are displayed by adding `--date-format` with tokens such as `DD`, `MM`, `YYYY`:
 
 ```bash
+node report.js --from 2025-09-01 --to 2025-09-30 --format hours-minutes --date-format "DD MM YYYY"
 node report.js --help
 ```
 
